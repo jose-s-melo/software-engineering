@@ -7,6 +7,9 @@
 }
 
 body {
-  background-color: #F4F1EA; /* Cor de papel envelhecido vintage */
-  color: #0A192F; /* Azul marinho profundo */
+  /* Remova ou altere essas cores para não forçar o estilo em tudo */
+  background-color: #F8F7F5; 
+  color: #1A1A1A; 
+  margin: 0;
+  padding: 0;
 }

@@ -1,9 +1,8 @@
 import type { Metadata } from "next";
-import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "The Barber Panel | Gestão & Tradição",
-  description: "Sistema de gestão para barbearias clássicas",
+  title: "Corte & Estilo | Gestão",
+  description: "Sistema de gestão profissional",
 };
 
 export default function RootLayout({
@@ -13,8 +12,8 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="pt-br">
-      {/* O fundo #F4F1EA dá o aspecto de papel envelhecido vintage */}
-      <body className="bg-[#F4F1EA] antialiased">
+      {/* Removemos o bg-[#F4F1EA] para que a página controle seu próprio fundo */}
+      <body className="antialiased">
         {children}
       </body>
     </html>
