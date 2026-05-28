@@ -6,10 +6,13 @@ import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import PageHeader from "@/components/ui/PageHeader";
 import TableContainer from "@/components/ui/TableContainer";
+import Modal from "@/components/ui/Modal";
 
 import ClientTable from "@/components/tables/ClientTable";
+import ClientForm from "@/components/forms/ClientForm";
 
 import { Cliente } from "@/types/cliente";
+import ClientAppointmentsModal from "@/components/modals/ClientAppointmentsModal";
 
 const clientesMock: Cliente[] = [
   {
@@ -34,8 +37,49 @@ const clientesMock: Cliente[] = [
 
 export default function ClientesAdminPage() {
   const [search, setSearch] = useState("");
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedClient, setSelectedClient] = useState<Cliente | null>(null);
+  const [clientes, setClientes] = useState<Cliente[]>(clientesMock);
+  const [isAppointmentsModalOpen, setIsAppointmentsModalOpen] = useState(false);
 
-  const clientesFiltrados = clientesMock.filter((cliente) =>
+  const handleCreateClient = (client: Cliente) => {
+    setClientes((prev) => [...prev, { ...client, id: String(prev.length + 1) }]);
+  }
+
+  const handleUpdateClient = (updatedClient: Cliente) => {
+    setClientes(
+      (prev) => 
+        prev.map((client) => 
+          client.id === updatedClient.id ? updatedClient : client
+      )
+    );
+  }
+
+  const handleDeleteClient = (clientId: string) => {
+    setClientes((prev) => prev.filter((client) => client.id !== clientId));
+  }
+
+  const handleSubmitClient = (client: Cliente) => {
+    if (selectedClient) {
+      handleUpdateClient(client);
+    } else {
+      handleCreateClient(client);
+    }
+
+    setIsModalOpen(false);
+  }
+
+  const handleEdit = (client: Cliente) => {
+    setSelectedClient(client);
+    setIsModalOpen(true);
+  }
+
+  const handleManageAppointments = (client: Cliente) => {
+    setSelectedClient(client);
+    setIsAppointmentsModalOpen(true);
+  }
+
+  const clientesFiltrados = clientes.filter((cliente) =>
 cliente.clientName.toLowerCase().includes(search.toLowerCase())
   );
 
@@ -46,10 +90,30 @@ cliente.clientName.toLowerCase().includes(search.toLowerCase())
         description="Gerencie os clientes cadastrados da barbearia."
       />
 
-        <Button>
+        <Button onClick={() => {
+          setSelectedClient(null);
+          setIsModalOpen(true)
+        }}>
           + Novo Cliente
         </Button>
       
+        {isModalOpen && (
+          <div
+            className="
+              fixed inset-0
+              bg-black/50
+              flex items-center justify-center
+              z-50
+              p-5
+            "
+          >
+            <ClientForm
+              initialData={selectedClient || undefined}
+              onClose={() => setIsModalOpen(false)}
+              onSubmit={handleSubmitClient}
+            />
+          </div>
+        )}
       
       <div
         className="
@@ -71,7 +135,12 @@ cliente.clientName.toLowerCase().includes(search.toLowerCase())
 
         <TableContainer>
           {clientesFiltrados.length > 0 ? (
-            <ClientTable clients={clientesFiltrados} />
+            <ClientTable 
+            clients={clientesFiltrados}
+            onEdit={handleEdit}
+            onDelete={handleDeleteClient}
+            onManageAppointments={handleManageAppointments}
+             />
           ) : (
             <div className="p-10 text-center text-gray-500">
             Nenhum cliente encontrado.
@@ -79,6 +148,13 @@ cliente.clientName.toLowerCase().includes(search.toLowerCase())
           )
         }
         </TableContainer>
+
+        <ClientAppointmentsModal
+          clientId={selectedClient?.id || ""}
+          clientName={selectedClient?.clientName || ""}
+          isOpen={isAppointmentsModalOpen}
+          onClose={() => setIsAppointmentsModalOpen(false)}
+        />
     </div>
   );
 }

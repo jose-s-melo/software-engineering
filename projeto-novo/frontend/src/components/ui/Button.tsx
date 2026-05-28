@@ -1,11 +1,14 @@
 type ButtonProps = {
   children: React.ReactNode;
-  variant?: "primary" | "danger" | "outline";
-};
+  onClick?: () => void;
+  variant?: "primary" | "danger" | "outline" | "utility"  | "submit";
+} & React.ButtonHTMLAttributes<HTMLButtonElement>;
 
 export default function Button({
   children,
+  onClick,
   variant = "primary",
+  ...props
 }: ButtonProps) {
 
   const variants = {
@@ -26,16 +29,34 @@ export default function Button({
     `,
 
     outline: `
-      bg-white
+      bg-green-600
+      text-[#0A192F]
+      border-[#0A192F]
+      hover:bg-white
+      hover:text-green-600
+    `,
+
+    utility: `
+      bg-green-600
       text-[#0A192F]
       border-[#0A192F]
       hover:bg-[#0A192F]
-      hover:text-white
+      hover:text-green-600
+    `,
+
+    submit: `
+      bg-[#0A192F]
+      text-white
+      border-[#0A192F]
+      hover:bg-white
+      hover:text-[#0A192F]
     `,
   };
 
   return (
     <button
+      {...props}
+      onClick={onClick}
       className={`
         bg-[#0A192F]
         text-white

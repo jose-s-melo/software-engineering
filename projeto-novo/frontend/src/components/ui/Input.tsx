@@ -1,7 +1,9 @@
 type InputProps = {
   placeholder?: string;
-  value: string;
+  value: string | number;
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  type?: string;
+  step?: string;
 };
 
 export default function Input({

@@ -1,23 +1,18 @@
-import { Cliente } from "@/types/cliente";
+import { Servico } from "@/types/servico";
 import Button from "../ui/Button";
+import { formatCurrency } from "@/utils/formatCurrency";
 
-import { useState } from "react";
-import ClientForm from "../forms/ClientForm";
-
-type ClientTableProps = {
-  clients: Cliente[];
-  onEdit: (client: Cliente) => void;
-  onDelete: (clientId: string) => void;
-  onManageAppointments: (client: Cliente) => void;
+type ServiceTableProps = {
+  services: Servico[];
+  onEdit: (service: Servico) => void;
+  onDelete: (serviceId: string) => void;
 };
 
-export default function ClientTable({
-  clients,
+export default function ServiceTable({
+  services,
   onEdit,
   onDelete,
-  onManageAppointments,
-}: ClientTableProps) {
-
+}: ServiceTableProps) {
   return (
     <table className="w-full border-collapse">
       <thead className="bg-[#0A192F] text-white uppercase">
@@ -27,11 +22,11 @@ export default function ClientTable({
           </th>
 
           <th className="p-5 text-left text-sm tracking-widest font-black">
-            Telefone
+            Preço
           </th>
 
           <th className="p-5 text-left text-sm tracking-widest font-black">
-            Email
+            Descrição
           </th>
 
           <th className="p-5 text-left text-sm tracking-widest font-black">
@@ -41,35 +36,30 @@ export default function ClientTable({
       </thead>
 
       <tbody>
-        {clients.map((client) => (
-          <tr key={client.id}>
+        {services.map((service) => (
+          <tr key={service.id}>
             <td className="p-5 font-semibold">
-              {client.clientName}
+              {service.serviceName}
             </td>
 
             <td className="p-5 font-semibold">
-              {client.clientPhone}
+                {formatCurrency(service.price)}
             </td>
 
             <td className="p-5 font-semibold">
-              {client.clientEmail}
+              {service.description}
             </td>
 
             <td className="p-5 font-semibold">
               <div className="flex gap-3">
-                <Button
-                  variant="primary"
-                  onClick={() => onEdit(client)}
-                >
+                <Button variant="primary"
+                        onClick={() => onEdit(service)}>
                   Editar
                 </Button>
 
-                <Button variant="danger" onClick={() => onDelete(client.id)}>
+                <Button variant="danger"
+                        onClick={() => onDelete(service.id)}>
                   Excluir
-                </Button>
-
-                <Button variant="utility" onClick={ () => onManageAppointments(client)}>
-                  Gerenciar Agendamentos
                 </Button>
               </div>
             </td>

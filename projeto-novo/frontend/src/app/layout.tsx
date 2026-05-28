@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+{/* import adicionado para páginas de gestão de cliente e serviços, pois não estão usando inline style */}
+import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Corte & Estilo | Gestão",
