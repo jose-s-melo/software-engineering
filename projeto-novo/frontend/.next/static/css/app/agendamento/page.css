@@ -1,0 +1,33 @@
+/*!*************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************!*\
+  !*** css ./node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[13].oneOf[3].use[1]!./node_modules/next/dist/build/webpack/loaders/next-font-loader/index.js??ruleSet[1].rules[13].oneOf[3].use[2]!./node_modules/next/font/local/target.css?{"path":"src\\app\\agendamento\\page.tsx","import":"","arguments":[{"src":"../../fonts/Attena.otf","display":"swap"}],"variableName":"fonteAttena"} ***!
+  \*************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************/
+@font-face {
+font-family: 'fonteAttena';
+src: url(/_next/static/media/4d1d9fca682fdd6c-s.p.otf) format('opentype');
+font-display: swap;
+}@font-face {font-family: 'fonteAttena Fallback';src: local("Arial");ascent-override: 86.48%;descent-override: 22.29%;line-gap-override: 0.00%;size-adjust: 104.07%
+}.__className_363c40 {font-family: 'fonteAttena', 'fonteAttena Fallback'
+}
+
+/*!*************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************!*\
+  !*** css ./node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[13].oneOf[3].use[1]!./node_modules/next/dist/build/webpack/loaders/next-font-loader/index.js??ruleSet[1].rules[13].oneOf[3].use[2]!./node_modules/next/font/local/target.css?{"path":"src\\app\\agendamento\\page.tsx","import":"","arguments":[{"src":"../../fonts/Strong.ttf","display":"swap"}],"variableName":"fonteStrong"} ***!
+  \*************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************/
+@font-face {
+font-family: 'fonteStrong';
+src: url(/_next/static/media/ce2bbfe4f43e3f65-s.p.ttf) format('truetype');
+font-display: swap;
+}@font-face {font-family: 'fonteStrong Fallback';src: local("Arial");ascent-override: 58.69%;descent-override: 15.36%;line-gap-override: 0.00%;size-adjust: 130.18%
+}.__className_6be820 {font-family: 'fonteStrong', 'fonteStrong Fallback'
+}
+
+/*!*****************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************!*\
+  !*** css ./node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[13].oneOf[3].use[1]!./node_modules/next/dist/build/webpack/loaders/next-font-loader/index.js??ruleSet[1].rules[13].oneOf[3].use[2]!./node_modules/next/font/local/target.css?{"path":"src\\app\\agendamento\\page.tsx","import":"","arguments":[{"src":"../../fonts/GothamBold.ttf","display":"swap"}],"variableName":"fonteGotham"} ***!
+  \*****************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************/
+@font-face {
+font-family: 'fonteGotham';
+src: url(/_next/static/media/f6816b5a23573696-s.p.ttf) format('truetype');
+font-display: swap;
+}@font-face {font-family: 'fonteGotham Fallback';src: local("Arial");ascent-override: 0.00%;descent-override: 0.00%;line-gap-override: 0.00%;size-adjust: 116.22%
+}.__className_0c7486 {font-family: 'fonteGotham', 'fonteGotham Fallback'
+}
+

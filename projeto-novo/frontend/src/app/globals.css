@@ -10,3 +10,26 @@ body {
   background-color: #F4F1EA; /* Cor de papel envelhecido vintage */
   color: #0A192F; /* Azul marinho profundo */
 }
+
+/* ========================================== */
+/* PERSONALIZAÇÃO DA BARRA DE ROLAGEM         */
+/* ========================================== */
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 8px; /* Afeta a barra do carrossel de datas */
+}
+
+::-webkit-scrollbar-track {
+  background: #ffffff; /* Seu COLORS.blueMid */
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #a80101;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #2a019b;
+}
