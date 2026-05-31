@@ -1,8 +1,0 @@
-{
-  "label": "Model Routing",
-  "position": 21,
-  "link": {
-    "type": "generated-index",
-    "description": "Model Router and strategies for routing"
-  }
-}

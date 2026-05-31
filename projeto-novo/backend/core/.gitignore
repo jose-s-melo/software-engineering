@@ -1,2 +1,5 @@
+/shelf/
+/.idea/workspace.xml
 .env
-.env.*
+.env.**
+/target
