@@ -21,9 +21,9 @@ public class ClientController {
     @PostMapping
     public ResponseEntity<ClientResponseDTO> addClient(@RequestBody ClientRequestDTO body) {
         UUID generatedId = UUID.randomUUID();
-        Client client = clientService.addClient(generatedId, body.getNome(), body.getEmail(), body.getTelefone());
+        Client client = clientService.addClient(generatedId, body.getName(), body.getEmail(), body.getPhone());
         
-        ClientResponseDTO responseBody = new ClientResponseDTO(client.getId(), client.getNome(), client.getTelefone(), client.getEmail());
+        ClientResponseDTO responseBody = new ClientResponseDTO(client.getId(), client.getName(), client.getPhone(), client.getEmail());
         ResponseEntity<ClientResponseDTO> responseEntity = ResponseEntity.ok(responseBody);
         return responseEntity;
     }
@@ -41,7 +41,7 @@ public class ClientController {
         ResponseEntity<ClientResponseDTO> responseEntity;
         
         if (client != null) {
-            ClientResponseDTO responseBody = new ClientResponseDTO(client.getId(), client.getNome(), client.getTelefone(), client.getEmail());
+            ClientResponseDTO responseBody = new ClientResponseDTO(client.getId(), client.getName(), client.getPhone(), client.getEmail());
             responseEntity = ResponseEntity.ok(responseBody);
         } else {
             responseEntity = ResponseEntity.notFound().build();
@@ -55,7 +55,7 @@ public class ClientController {
         List<ClientResponseDTO> dtoList = new ArrayList<>();
         
         for (Client client : clients) {
-            dtoList.add(new ClientResponseDTO(client.getId(), client.getNome(), client.getTelefone(), client.getEmail()));
+            dtoList.add(new ClientResponseDTO(client.getId(), client.getName(), client.getPhone(), client.getEmail()));
         }
         
         ResponseEntity<List<ClientResponseDTO>> responseEntity = ResponseEntity.ok(dtoList);
@@ -64,11 +64,11 @@ public class ClientController {
 
     @PutMapping("/{id}")
     public ResponseEntity<ClientResponseDTO> updateClient(@PathVariable UUID id, @RequestBody ClientRequestDTO body) {
-        Client client = clientService.updateClient(id, body.getNome(), body.getEmail(), body.getTelefone());
+        Client client = clientService.updateClient(id, body.getName(), body.getEmail(), body.getPhone());
         ResponseEntity<ClientResponseDTO> responseEntity;
         
         if (client != null) {
-            ClientResponseDTO responseBody = new ClientResponseDTO(client.getId(), client.getNome(), client.getTelefone(), client.getEmail());
+            ClientResponseDTO responseBody = new ClientResponseDTO(client.getId(), client.getName(), client.getPhone(), client.getEmail());
             responseEntity = ResponseEntity.ok(responseBody);
         } else {
             responseEntity = ResponseEntity.notFound().build();

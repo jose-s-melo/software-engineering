@@ -10,7 +10,7 @@ import lombok.AllArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ClientRequestDTO {
-    private String nome;
-    private String telefone;
+    private String name;
+    private String phone;
     private String email;
 }

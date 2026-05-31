@@ -12,7 +12,7 @@ import lombok.AllArgsConstructor;
 @AllArgsConstructor
 public class ClientResponseDTO {
     private UUID id;
-    private String nome;
-    private String telefone;
+    private String name;
+    private String phone;
     private String email;
 }

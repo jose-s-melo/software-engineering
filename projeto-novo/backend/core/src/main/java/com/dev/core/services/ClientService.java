@@ -13,8 +13,8 @@ public class ClientService {
 
     private final ClientRepository clientRepository;
 
-    public Client addClient(UUID id, String nome, String email, String telefone) {
-        Client client = new Client(id, nome, email, telefone);
+    public Client addClient(UUID id, String name, String email, String phone) {
+        Client client = new Client(id, name, email, phone);
         Client savedClient = clientRepository.save(client);
         return savedClient;
     }
@@ -28,12 +28,12 @@ public class ClientService {
         return foundClient;
     }
 
-    public Client updateClient(UUID id, String nome, String email, String telefone) {
+    public Client updateClient(UUID id, String name, String email, String phone) {
         Client targetClient = clientRepository.findById(id).orElse(null);
         if (targetClient != null) {
-            targetClient.setNome(nome);
+            targetClient.setName(name);
             targetClient.setEmail(email);
-            targetClient.setTelefone(telefone);
+            targetClient.setPhone(phone);
             targetClient = clientRepository.save(targetClient);
         }
         return targetClient;

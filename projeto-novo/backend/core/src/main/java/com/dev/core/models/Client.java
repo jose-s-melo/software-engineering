@@ -17,7 +17,7 @@ import lombok.Builder;
 @AllArgsConstructor
 public class Client {
     private UUID id;
-    private String nome;
+    private String name;
     private String email;
-    private String telefone;
+    private String phone;
 }
