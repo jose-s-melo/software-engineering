@@ -31,8 +31,6 @@ public class BarbershopService {
     private AddressMapper addressMapper;
     
     public BarbershopResponseDTO registerBarbershop(BarbershopRegisterDTO dto) throws InvalidBarbershopException {
-        System.out.println(">>>> entrou no service");
-
         if (!validateBarbershopParams(dto)) {
             throw new InvalidBarbershopException();
         }

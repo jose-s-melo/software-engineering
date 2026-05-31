@@ -29,15 +29,12 @@ public class BarbershopController {
 
     @PostMapping
     public ResponseEntity<Void> registerBarbershop(@RequestBody BarbershopRegisterDTO body){
-        System.out.println(">>>> chegou no controller com o body: " + body);
         ResponseEntity<Void> response;
 
         try {
-            System.out.println(">>>> entrou no try");
             service.registerBarbershop(body);
             response = ResponseEntity.noContent().build();
         } catch (InvalidBarbershopException e) {
-            System.out.println(">>>> caiu no catch");
             response = ResponseEntity.badRequest().build();
         }
 
