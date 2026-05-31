@@ -12,8 +12,8 @@ import com.dev.core.dtos.barbershop.BarbershopResponseDTO;
 import com.dev.core.dtos.barbershop.BarbershopUpdateDTO;
 import com.dev.core.exceptions.BarbershopNotFoundException;
 import com.dev.core.exceptions.InvalidBarbershopException;
-import com.dev.core.mapper.AddressMapper;
-import com.dev.core.mapper.BarbershopMapper;
+import com.dev.core.mappers.AddressMapper;
+import com.dev.core.mappers.BarbershopMapper;
 import com.dev.core.models.barbershop.Address;
 import com.dev.core.models.barbershop.Barbershop;
 import com.dev.core.repositories.BarbershopRepository;
@@ -42,7 +42,7 @@ public class BarbershopService {
         return barbershopMapper.toResponse(saved);
     }
 
-    public BarbershopResponseDTO deleteBarbershop(UUID id){
+    public BarbershopResponseDTO deleteBarbershop(UUID id) throws BarbershopNotFoundException{
         Optional<Barbershop> optional = repository.findById(id);
 
         if (optional.isEmpty()) {
