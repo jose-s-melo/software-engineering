@@ -29,6 +29,7 @@ public class SecurityFilter extends OncePerRequestFilter {
         String token = recoverToken(request);
 
         if(token != null) {
+            System.out.println("entrou no token valido");
             String username = tokenService.validateToken(token);
 
             UserDetails userDetails = userDetailsService.loadUserByUsername(username);
@@ -38,8 +39,9 @@ public class SecurityFilter extends OncePerRequestFilter {
                     null,
                     userDetails.getAuthorities());
             SecurityContextHolder.getContext().setAuthentication(authentication);
+            System.out.println("setou o contexto");
         }
-
+        System.out.println("talvez nao setou");
         filterChain.doFilter(request, response);
     }
 
