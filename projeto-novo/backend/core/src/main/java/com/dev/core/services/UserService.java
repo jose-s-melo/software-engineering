@@ -21,7 +21,6 @@ public class UserService {
     private PasswordEncoder encoder;
 
     public User addUser(String email, String password) {
-
         if (userRepository.findByEmail(email).isPresent()) {
             throw new EmailAlreadyExistsException();
         }

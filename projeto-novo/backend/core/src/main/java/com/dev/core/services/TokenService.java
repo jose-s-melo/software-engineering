@@ -4,6 +4,8 @@ import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.exceptions.JWTCreationException;
 import com.auth0.jwt.exceptions.JWTVerificationException;
+
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
@@ -24,11 +26,15 @@ public class TokenService {
 
     public String generateToken(UserDetails user) {
         try {
+            List<String> roles = user.getAuthorities()
+                    .stream()
+                    .map(GrantedAuthority::getAuthority)
+                    .toList();
+
             return JWT.create()
                     .withIssuer(ISSUER)
-                    .withIssuedAt(Instant.now())
                     .withSubject(user.getUsername())
-                    .withClaim("roles", (List<?>) user.getAuthorities())
+                    .withClaim("roles", roles)
                     .withExpiresAt(generateExpiration())
                     .sign(ALGORITHM);
         } catch (JWTCreationException e) {
@@ -72,6 +78,6 @@ public class TokenService {
     }
 
     private Instant generateExpiration() {
-        return LocalDateTime.now().plusHours(2).toInstant(ZoneOffset.UTC);
+        return Instant.now().plusSeconds(2 * 60 * 60);
     }
 }
