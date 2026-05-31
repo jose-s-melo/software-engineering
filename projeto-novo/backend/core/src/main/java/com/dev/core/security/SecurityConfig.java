@@ -21,6 +21,7 @@ public class SecurityConfig {
     @Autowired
     private SecurityFilter securityFilter;
 
+    @Autowired
     private UserDetailsService userDetailsService;
 
     @Bean
