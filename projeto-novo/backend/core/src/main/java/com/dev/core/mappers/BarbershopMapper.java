@@ -1,4 +1,4 @@
-package com.dev.core.mapper;
+package com.dev.core.mappers;
 
 import org.mapstruct.Mapper;
 
