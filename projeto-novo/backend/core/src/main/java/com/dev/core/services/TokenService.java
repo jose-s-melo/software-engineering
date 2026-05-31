@@ -1,0 +1,77 @@
+package com.dev.core.services;
+
+import com.auth0.jwt.JWT;
+import com.auth0.jwt.algorithms.Algorithm;
+import com.auth0.jwt.exceptions.JWTCreationException;
+import com.auth0.jwt.exceptions.JWTVerificationException;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.stereotype.Service;
+
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.util.List;
+
+@Service
+public class TokenService {
+
+    public final String ISSUER = "hardcoded";
+
+    private final String SECRET = "hardcoded";
+
+    private final Algorithm ALGORITHM = Algorithm.HMAC256(SECRET);
+
+    public String generateToken(UserDetails user) {
+        try {
+            return JWT.create()
+                    .withIssuer(ISSUER)
+                    .withIssuedAt(Instant.now())
+                    .withSubject(user.getUsername())
+                    .withClaim("roles", (List<?>) user.getAuthorities())
+                    .withExpiresAt(generateExpiration())
+                    .sign(ALGORITHM);
+        } catch (JWTCreationException e) {
+            return null;
+        }
+    }
+
+    public String validateToken(String token) {
+        try {
+            return JWT.require(ALGORITHM)
+                    .withIssuer(ISSUER)
+                    .build()
+                    .verify(token)
+                    .getSubject();
+        } catch (JWTVerificationException e) {
+            return null;
+        }
+    }
+
+    public boolean isAdmin(String authHeader) {
+        String token = extractToken(authHeader);
+        boolean response = false;
+
+        if (validateToken(token) != null && JWT
+                .decode(token)
+                .getClaim("roles")
+                .asList(SimpleGrantedAuthority.class)
+                .stream()
+                .anyMatch(simpleGrantedAuthority ->
+                        simpleGrantedAuthority
+                                .getAuthority()
+                                .contains("ADMIN"))) {
+            response = true;
+        }
+
+        return response;
+    }
+
+    private String extractToken(String authHeader) {
+        return authHeader.replace("Bearer ", "");
+    }
+
+    private Instant generateExpiration() {
+        return LocalDateTime.now().plusHours(2).toInstant(ZoneOffset.UTC);
+    }
+}

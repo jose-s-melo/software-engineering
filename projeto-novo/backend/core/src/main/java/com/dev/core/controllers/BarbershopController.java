@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.dev.core.dtos.barbershop.BarbershopRegisterDTO;
 import com.dev.core.dtos.barbershop.BarbershopResponseDTO;
 import com.dev.core.dtos.barbershop.BarbershopUpdateDTO;
-import com.dev.core.exception.InvalidBarbershopException;
+import com.dev.core.exceptions.InvalidBarbershopException;
 import com.dev.core.services.barbershop.BarbershopService;
 
 @RestController

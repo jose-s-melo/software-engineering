@@ -1,4 +1,4 @@
-package com.dev.core.exception;
+package com.dev.core.exceptions;
 
 public class InvalidBarbershopException extends IllegalArgumentException{
     public static final String DEFAULT_MESSAGE = "Invalid barbershop field";

@@ -1,4 +1,4 @@
-package com.dev.core.exception;
+package com.dev.core.exceptions;
 
 public class BarbershopNotFoundException extends RuntimeException{
     public static final String DEFAULT_MESSAGE = "Barber shop not found";
