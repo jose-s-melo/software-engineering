@@ -1,5 +1,6 @@
 package com.dev.core.dtos.barbershop;
 
+import java.io.Serializable;
 import java.util.UUID;
 
 public record AddressResponseDTO(
@@ -9,4 +10,4 @@ public record AddressResponseDTO(
     String neighborhood,
     String city,
     String uf
-) {}
+) implements Serializable {}

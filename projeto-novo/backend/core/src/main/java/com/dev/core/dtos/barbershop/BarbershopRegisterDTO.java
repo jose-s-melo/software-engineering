@@ -1,5 +1,7 @@
 package com.dev.core.dtos.barbershop;
 
+import java.io.Serializable;
+
 public record BarbershopRegisterDTO(
     String name,
     String username,
@@ -7,4 +9,4 @@ public record BarbershopRegisterDTO(
     String cnpj,
     AddressDTO location,
     String phone
-) {}
+) implements Serializable {}
