@@ -30,7 +30,7 @@ public class BarbershopService {
     @Autowired
     private AddressMapper addressMapper;
     
-    public BarbershopResponseDTO registerBarbershop(BarbershopRegisterDTO dto) throws InvalidBarbershopException {
+    public BarbershopResponseDTO registerBarbershop(BarbershopRegisterDTO dto) {
         if (!validateBarbershopParams(dto)) {
             throw new InvalidBarbershopException();
         }
@@ -42,7 +42,7 @@ public class BarbershopService {
         return barbershopMapper.toResponse(saved);
     }
 
-    public BarbershopResponseDTO deleteBarbershop(UUID id) throws BarbershopNotFoundException{
+    public BarbershopResponseDTO deleteBarbershop(UUID id){
         Optional<Barbershop> optional = repository.findById(id);
 
         if (optional.isEmpty()) {
@@ -54,35 +54,37 @@ public class BarbershopService {
         return barbershopMapper.toResponse(optional.get());
     }
 
-    public BarbershopResponseDTO updateBarbershop(UUID id, BarbershopUpdateDTO dto) throws BarbershopNotFoundException{
+    public BarbershopResponseDTO updateBarbershop(UUID id, BarbershopUpdateDTO dto){
         Optional<Barbershop> optional = repository.findById(id);
 
         if (optional.isEmpty()) {
             throw new BarbershopNotFoundException();   
         }
 
-        if (validateBarbershopParams(dto)) {
-            optional.get().setName(dto.name());
-            optional.get().setUsername(dto.username());
-
-            Address location = optional.get().getLocation();
-            Address newLocation = addressMapper.toEntity(dto.location());
-            
-            location.setStreet(newLocation.getStreet());
-            location.setNumber(newLocation.getNumber());
-            location.setNeighborhood(newLocation.getNeighborhood());
-            location.setCity(newLocation.getCity());
-            location.setUf(newLocation.getUf());
-
-            optional.get().setLocation(location);
+        if (!validateBarbershopParams(dto)) {
+            throw new InvalidBarbershopException();
         }
+        
+        optional.get().setName(dto.name());
+        optional.get().setUsername(dto.username());
+
+        Address location = optional.get().getLocation();
+        Address newLocation = addressMapper.toEntity(dto.location());
+        
+        location.setStreet(newLocation.getStreet());
+        location.setNumber(newLocation.getNumber());
+        location.setNeighborhood(newLocation.getNeighborhood());
+        location.setCity(newLocation.getCity());
+        location.setUf(newLocation.getUf());
+
+        optional.get().setLocation(location);
 
         repository.save(optional.get());
 
         return barbershopMapper.toResponse(optional.get());
     }
 
-    public BarbershopResponseDTO getBarbershop(UUID id) throws BarbershopNotFoundException{
+    public BarbershopResponseDTO getBarbershop(UUID id){
         Optional<Barbershop> optional = repository.findById(id);
 
         if (optional.isEmpty()) {
