@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-{/* import adicionado para páginas de gestão de cliente e serviços, pois não estão usando inline style */}
+import Navbar from "@/components/Navbar"; // Adicione esta linha (ajuste o caminho se a pasta components estiver em outro lugar)
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -16,6 +16,8 @@ export default function RootLayout({
     <html lang="pt-br">
       {/* Removemos o bg-[#F4F1EA] para que a página controle seu próprio fundo */}
       <body className="antialiased">
+        {/* A Navbar entra aqui, antes de todo o resto do conteúdo */}
+        <Navbar />
         {children}
       </body>
     </html>
