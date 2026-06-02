@@ -1,10 +1,13 @@
 package com.dev.core.exceptions;
 
-public class BarbershopNotFoundException extends RuntimeException{
-    public static final String DEFAULT_MESSAGE = "Barber shop not found";
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.ResponseStatus;
 
+@ResponseStatus(HttpStatus.NOT_FOUND)
+public class BarbershopNotFoundException extends RuntimeException{
+    
     public BarbershopNotFoundException() {
-        super(DEFAULT_MESSAGE);
+        super("Barber shop not found");
     }
 
     public BarbershopNotFoundException(String message) {
