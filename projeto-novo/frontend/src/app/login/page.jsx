@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 const COLORS = {
   red: "#C8102E",
@@ -113,17 +114,51 @@ function Input({ label, type = "text", value, onChange, placeholder, icon }) {
 }
 
 function LoginForm({ onSwitch }) {
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const handle = () => {
+  const handle = async () => {
     if (!email || !password) { setError("Preencha todos os campos."); return; }
     if (!email.includes("@")) { setError("E-mail inválido."); return; }
+    
     setError("");
     setLoading(true);
-    setTimeout(() => { setLoading(false); setError(""); alert("Login realizado com sucesso! ✂️"); }, 1400);
+
+    try {
+      const response = await fetch("/api/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        // Salva o token e a role no navegador
+        localStorage.setItem("token", data.token);
+        localStorage.setItem("role", data.user.role);
+
+        // Direciona de acordo com o perfil
+        if (data.user.role === "ADMIN") {
+          router.push("/admin/dashboard");
+        } else if (data.user.role === "CLIENT") {
+          router.push("/agendamento");
+        } else {
+          setError("Perfil de usuário não reconhecido.");
+          setLoading(false);
+        }
+      } else {
+        setError(data.message || "Erro ao fazer login. Verifique suas credenciais.");
+        setLoading(false);
+      }
+    } catch (err) {
+      console.error(err);
+      setError("Erro de conexão. Tente novamente mais tarde.");
+      setLoading(false);
+    }
   };
 
   return (
