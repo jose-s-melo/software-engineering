@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -17,7 +18,6 @@ import org.springframework.web.bind.annotation.RestController;
 import com.dev.core.dtos.barbershop.BarbershopRegisterDTO;
 import com.dev.core.dtos.barbershop.BarbershopResponseDTO;
 import com.dev.core.dtos.barbershop.BarbershopUpdateDTO;
-import com.dev.core.exceptions.InvalidBarbershopException;
 import com.dev.core.services.barbershop.BarbershopService;
 
 @RestController
@@ -29,24 +29,16 @@ public class BarbershopController {
 
     @PostMapping
     public ResponseEntity<Void> registerBarbershop(@RequestBody BarbershopRegisterDTO body){
-        ResponseEntity<Void> response;
-
-        try {
-            service.registerBarbershop(body);
-            response = ResponseEntity.noContent().build();
-        } catch (InvalidBarbershopException e) {
-            response = ResponseEntity.badRequest().build();
-        }
-
-        return response;
+        service.registerBarbershop(body);
+        return ResponseEntity.status(HttpStatus.CREATED).build();
     }
-
+    
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteBarbershop(@PathVariable UUID id){
         service.deleteBarbershop(id);
-        return ResponseEntity.ok().build();
+        return ResponseEntity.noContent().build();
     }
-
+    
     @PutMapping("/{id}")
     public ResponseEntity<Void> updateBarbershop(@PathVariable UUID id, @RequestBody BarbershopUpdateDTO body){
         service.updateBarbershop(id, body);
@@ -59,7 +51,7 @@ public class BarbershopController {
     }
 
     @GetMapping
-    public ResponseEntity<List<BarbershopResponseDTO>> getAllbarbershops(){
+    public ResponseEntity<List<BarbershopResponseDTO>> getAllBarbershops(){
         return ResponseEntity.ok(service.getAllBarbershops());
     }
 }
