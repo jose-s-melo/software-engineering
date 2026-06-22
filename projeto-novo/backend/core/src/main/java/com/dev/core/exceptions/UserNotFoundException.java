@@ -1,8 +1,11 @@
 package com.dev.core.exceptions;
 
-public class UserNotFoundException extends RuntimeException {
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.ResponseStatus;
 
+@ResponseStatus(HttpStatus.NOT_FOUND) // HTTP 404
+public class UserNotFoundException extends RuntimeException {
     public UserNotFoundException() {
-        super("User not found");
+        super("Usuário não encontrado.");
     }
 }
