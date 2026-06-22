@@ -1,5 +1,6 @@
 package com.dev.core.services;
 
+import com.dev.core.dtos.RegisterRequestDTO;
 import com.dev.core.exceptions.EmailAlreadyExistsException;
 import com.dev.core.exceptions.UserNotFoundException;
 import com.dev.core.models.user.User;
@@ -20,15 +21,18 @@ public class UserService {
     @Autowired
     private PasswordEncoder encoder;
 
-    public User addUser(String email, String password) {
-        if (userRepository.findByEmail(email).isPresent()) {
+    public User addUser(RegisterRequestDTO data) {
+        if (userRepository.findByEmail(data.email()).isPresent()) {
             throw new EmailAlreadyExistsException();
         }
 
         User user = new User();
-        user.setEmail(email);
-        user.setPassword(encoder.encode(password));
-        user.setRole(UserRole.COMMON);
+        user.setName(data.name());
+        user.setEmail(data.email());
+        user.setPassword(encoder.encode(data.password()));
+        user.setPhone(data.phone());
+        
+        user.setRole(UserRole.CLIENTE);
 
         user = userRepository.save(user);
 
@@ -56,5 +60,4 @@ public class UserService {
     public User getUser(UUID userId) {
         return userRepository.findById(userId).orElseThrow(UserNotFoundException::new);
     }
-
 }
