@@ -1,6 +1,5 @@
 package com.dev.core.dtos.serviceoffering;
 
-import com.dev.core.dtos.barbershop.BarbershopResponseDTO;
 import com.dev.core.models.serviceoffering.ServiceOffering;
 import io.swagger.v3.oas.annotations.media.Schema;
 
