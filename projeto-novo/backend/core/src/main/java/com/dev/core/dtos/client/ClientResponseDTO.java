@@ -1,5 +1,6 @@
-package com.dev.core.dtos;
+package com.dev.core.dtos.client;
 
+import java.util.UUID;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -9,8 +10,8 @@ import lombok.AllArgsConstructor;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class ClientRequestDTO {
+public class ClientResponseDTO {
+    private UUID id;
     private String name;
     private String phone;
-    private String email;
 }

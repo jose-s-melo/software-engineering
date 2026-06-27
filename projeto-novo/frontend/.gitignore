@@ -1,0 +1,11 @@
+# Pastas de dependências e build
+node_modules/
+.next/
+out/
+build/
+
+# Logs e arquivos de sistema
+.DS_Store
+*.log
+npm-debug.log*
+.env*.local

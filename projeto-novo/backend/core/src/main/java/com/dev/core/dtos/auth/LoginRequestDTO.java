@@ -1,4 +1,4 @@
-package com.dev.core.dtos;
+package com.dev.core.dtos.auth;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 

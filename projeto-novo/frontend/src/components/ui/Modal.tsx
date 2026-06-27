@@ -1,0 +1,47 @@
+type ModalProps = {
+  isOpen: boolean;
+  onClose: () => void;
+  children: React.ReactNode;
+};
+
+export default function Modal({
+  isOpen,
+  onClose,
+  children,
+}: ModalProps) {
+  if (!isOpen) return null;
+
+  return (
+    <div
+      className="
+        fixed inset-0
+        bg-black/50
+        flex items-center justify-center
+        z-50
+      "
+    >
+      <div
+        className="
+          bg-white
+          border-4 border-[#0A192F]
+          p-8
+          w-full max-w-xl
+          shadow-[10px_10px_0px_0px_rgba(139,0,0,1)]
+          relative
+        "
+      >
+        <button
+          onClick={onClose}
+          className="
+            absolute top-4 right-4
+            font-black text-xl
+          "
+        >
+          X
+        </button>
+
+        {children}
+      </div>
+    </div>
+  );
+}

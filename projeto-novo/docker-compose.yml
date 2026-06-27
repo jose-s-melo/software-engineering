@@ -16,6 +16,19 @@ services:
       timeout: 5s
       retries: 5
 
+  frontend:
+    container_name: barbearia-front
+    build:
+      context: ./frontend/
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    environment:
+      - NODE_ENV=development
+
   api:
     build: ./backend/core/
     container_name: api_container
@@ -35,3 +48,4 @@ services:
 
 volumes:
   postgres_data:
+

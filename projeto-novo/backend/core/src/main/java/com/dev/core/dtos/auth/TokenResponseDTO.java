@@ -1,4 +1,4 @@
-package com.dev.core.dtos;
+package com.dev.core.dtos.auth;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
@@ -16,5 +16,7 @@ public record TokenResponseDTO(
                 description = "Mensagem indicando o resultado da operação",
                 example = "Success"
         )
-        String message
+        String message,
+
+        UserResponseDTO user
 ) implements Serializable {}

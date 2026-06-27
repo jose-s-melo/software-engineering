@@ -14,8 +14,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.dev.core.dtos.LoginRequestDTO;
-import com.dev.core.dtos.TokenResponseDTO;
+import com.dev.core.dtos.auth.LoginRequestDTO;
+import com.dev.core.dtos.auth.TokenResponseDTO;
 import com.dev.core.services.AuthService;
 
 @RestController
@@ -48,11 +48,12 @@ public class AuthController {
             )
     })
     public ResponseEntity<TokenResponseDTO> login(@RequestBody LoginRequestDTO body) {
-        try {
-            String token = authService.login(body.email(), body.password());
-            return ResponseEntity.ok(new TokenResponseDTO(token, "Success"));
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(new TokenResponseDTO(null, "Failed"));
+        TokenResponseDTO response = authService.login(body.email(), body.password());
+
+        if (response.token() == null) {
+            return ResponseEntity.badRequest().body(response);
+        } else {
+            return ResponseEntity.ok(response);
         }
     }
 
