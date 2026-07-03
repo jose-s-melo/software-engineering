@@ -4,7 +4,6 @@ import com.dev.core.models.email.Email;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.io.Serializable;
-import java.util.UUID;
 
 /**
  * DTO for {@link Email}
