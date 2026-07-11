@@ -1,5 +1,6 @@
 package com.dev.core.services;
 
+import com.dev.core.dtos.RegisterRequestDTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -7,13 +8,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
-import com.dev.core.repositories.UserRepository;
-
 @Service
 public class AuthService {
-
-    @Autowired
-    private UserRepository userRepository;
 
     @Autowired
     private AuthenticationManager authenticationManager;
@@ -31,8 +27,7 @@ public class AuthService {
         return tokenService.generateToken((UserDetails) authentication.getPrincipal());
     }
 
-    public void register(String email, String password) {
-        userService.addUser(email, password);
+    public void register(RegisterRequestDTO data) {
+        userService.addUser(data);
     }
-
 }
