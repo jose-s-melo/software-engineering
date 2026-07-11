@@ -6,7 +6,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.Valid;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -34,9 +34,9 @@ public class AuthController {
             @ApiResponse(responseCode = "200", description = "Login realizado com sucesso", content = @Content(mediaType = "application/json", schema = @Schema(implementation = TokenResponseDTO.class))),
             @ApiResponse(responseCode = "400", description = "Credenciais inválidas")
     })
-    public ResponseEntity<TokenResponseDTO> login(@RequestBody @Valid LoginRequestDTO body) {
+    public ResponseEntity<TokenResponseDTO> login(@RequestBody LoginRequestDTO body) {
         try {
-            String token = authService.login(body.email(), body.password());
+            String token = authService.login(body);
             return ResponseEntity.ok(new TokenResponseDTO(token, "Success"));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(new TokenResponseDTO(null, "Failed"));
@@ -44,12 +44,12 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-    @Operation(summary = "Registra um novo usuário cliente", description = "Cria uma nova conta. Os usuários registrados por esta rota recebem a role CLIENTE automaticamente.")
+    @Operation(summary = "Registra um novo usuário", description = "Cria uma nova conta utilizando email e senha. Os usuários por padrão possuem o role COMMON")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "Usuário criado com sucesso"),
             @ApiResponse(responseCode = "400", description = "Dados inválidos ou usuário já existente")
     })
-    public ResponseEntity<Void> register(@RequestBody @Valid RegisterRequestDTO body) {
+    public ResponseEntity<Void> register(@RequestBody RegisterRequestDTO body) {
         try {
             authService.register(body);
             return ResponseEntity.status(HttpStatus.CREATED).build();
