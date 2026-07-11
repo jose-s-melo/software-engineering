@@ -1,6 +1,8 @@
 package com.dev.core.services;
 
+import com.dev.core.dtos.RegisterRequestDTO;
 import com.dev.core.exceptions.EmailAlreadyExistsException;
+import com.dev.core.exceptions.InvalidUserException;
 import com.dev.core.exceptions.UserNotFoundException;
 import com.dev.core.models.user.User;
 import com.dev.core.models.user.UserRole;
@@ -8,6 +10,7 @@ import com.dev.core.repositories.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 import java.util.UUID;
 
@@ -20,15 +23,20 @@ public class UserService {
     @Autowired
     private PasswordEncoder encoder;
 
-    public User addUser(String email, String password) {
-        if (userRepository.findByEmail(email).isPresent()) {
+    public User addUser(RegisterRequestDTO data) {
+        String normalizedEmail = normalizeEmail(data.email());
+
+        if (userRepository.findByEmail(normalizedEmail).isPresent()) {
             throw new EmailAlreadyExistsException();
         }
 
         User user = new User();
-        user.setEmail(email);
-        user.setPassword(encoder.encode(password));
-        user.setRole(UserRole.COMMON);
+        user.setName(data.name());
+        user.setEmail(normalizedEmail);
+        user.setPassword(encoder.encode(data.password()));
+        user.setPhone(data.phone());
+
+        user.setRole(UserRole.CLIENTE);
 
         user = userRepository.save(user);
 
@@ -37,7 +45,20 @@ public class UserService {
 
     public User updateUser(UUID userId, String email, String password) {
         User user = userRepository.findById(userId).orElseThrow(UserNotFoundException::new);
-        user.setEmail(email);
+
+        if (!StringUtils.hasText(email)) {
+            throw new InvalidUserException("O email não pode ser vazio.");
+        }
+
+        String normalizedEmail = normalizeEmail(email);
+
+        userRepository.findByEmail(normalizedEmail).ifPresent(existing -> {
+            if (!existing.getId().equals(userId)) {
+                throw new EmailAlreadyExistsException();
+            }
+        });
+
+        user.setEmail(normalizedEmail);
         user.setPassword(encoder.encode(password));
 
         user = userRepository.save(user);
@@ -57,4 +78,10 @@ public class UserService {
         return userRepository.findById(userId).orElseThrow(UserNotFoundException::new);
     }
 
+    private String normalizeEmail(String email) {
+        if (email == null) {
+            return null;
+        }
+        return email.trim().toLowerCase();
+    }
 }

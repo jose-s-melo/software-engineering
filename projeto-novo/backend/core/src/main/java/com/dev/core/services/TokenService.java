@@ -74,7 +74,13 @@ public class TokenService {
     }
 
     private String extractToken(String authHeader) {
-        return authHeader.replace("Bearer ", "");
+        String tokenExtract = null;
+
+        if (authHeader != null){
+            tokenExtract = authHeader.replace("Bearer ", "");
+        }
+        
+        return tokenExtract;
     }
 
     private Instant generateExpiration() {
