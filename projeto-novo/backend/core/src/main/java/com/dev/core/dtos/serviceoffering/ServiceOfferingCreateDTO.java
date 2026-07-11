@@ -5,6 +5,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
+import java.time.Duration;
+import java.time.Instant;
 
 /**
  * DTO for {@link ServiceOffering}
@@ -34,6 +36,9 @@ public record ServiceOfferingCreateDTO(
                 description = "Preço do serviço",
                 example = "25.00"
         )
-        BigDecimal price
+        BigDecimal price,
+
+
+        Duration duration
 
 ) implements Serializable {}
