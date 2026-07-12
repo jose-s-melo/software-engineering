@@ -1,5 +1,6 @@
 package com.dev.core.models;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -14,6 +15,12 @@ import lombok.Setter;
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.util.UUID;
+
+
+import com.dev.core.serializers.DurationHHMMDeserializer;
+import com.dev.core.serializers.DurationHHMMSerializer;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 @Entity
 @Getter
@@ -34,5 +41,5 @@ public class Servico {
     private BigDecimal preco;
 
     @Column(nullable = false)
-    private Duration tempoEstimado;
+    private String tempoEstimado;
 }

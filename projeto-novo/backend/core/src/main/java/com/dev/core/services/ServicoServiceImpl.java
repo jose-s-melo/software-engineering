@@ -1,6 +1,7 @@
 package com.dev.core.services;
 
 import com.dev.core.dtos.ServicoDTO;
+import com.dev.core.dtos.ServicoResponseDTO;
 import com.dev.core.models.Servico;
 import com.dev.core.repositories.ServicoRepository;
 import org.springframework.stereotype.Service;
@@ -47,14 +48,14 @@ public class ServicoServiceImpl {
         servicoRepository.delete(servico);
     }
 
-    public List<ServicoDTO> findAllDto() {
+    public List<ServicoResponseDTO> findAllDto() {
         return servicoRepository.findAll()
                 .stream()
-                .map(servico -> new ServicoDTO(
+                .map(servico -> new ServicoResponseDTO(
                         servico.getId(),
                         servico.getNome(),
                         servico.getPreco(),
-                        (int) servico.getTempoEstimado().toMinutes()
+                        servico.getTempoEstimado()
                 ))
                 .toList();
     }

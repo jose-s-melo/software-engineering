@@ -49,7 +49,7 @@ public class AtendimentoService {
 
         // 4. Converte a Data (LocalDate) + Horário ("10:00") para um Instant UTC
         // Ajuste o ZoneId para a região da sua barbearia (ex: "America/Sao_Paulo")
-        Instant horaAtendimento = LocalTimeToInstant(dto.data(), dto.horarioEscolhido());
+        String horaAtendimento = dto.horarioEscolhido();
 
         // 5. Cria e salva o Atendimento
         Atendimento atendimento = Atendimento.builder()

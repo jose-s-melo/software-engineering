@@ -9,7 +9,7 @@ import java.util.UUID;
 public record AtendimentoResponseDTO(
         UUID id,
         String emailClient,
-        Instant hora,
+        String hora,
         String nomeServico,
         java.math.BigDecimal precoServico,
         StatusAtendimento status

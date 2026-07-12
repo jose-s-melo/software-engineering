@@ -39,7 +39,7 @@ public class Atendimento {
     private String emailClient;
 
     @Column(nullable = false)
-    private Instant hora;
+    private String hora;
 
     @ManyToOne(optional = false, fetch = FetchType.LAZY)
     @JoinColumn(name = "servico_id")
