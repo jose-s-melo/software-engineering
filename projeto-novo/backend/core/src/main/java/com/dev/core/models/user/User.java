@@ -40,6 +40,7 @@ public class User implements UserDetails {
 
     private String phone;
 
+    @Enumerated(EnumType.STRING)
     private UserRole role;
 
     @Override

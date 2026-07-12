@@ -5,6 +5,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.math.BigDecimal;
+import java.time.Duration;
 import java.util.UUID;
 
 @Entity
@@ -48,5 +49,7 @@ public class ServiceOffering {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "barbershop_id", nullable = false)
     private Barbershop barbershop;
+
+    private Duration duration;
 
 }
