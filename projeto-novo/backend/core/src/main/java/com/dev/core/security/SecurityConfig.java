@@ -47,6 +47,8 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/login").permitAll()
                         .requestMatchers("/api/auth/register").permitAll()
                         .requestMatchers("/api/auth/changePassword").permitAll()
+                        .requestMatchers("/api/auth/forgot").permitAll()
+                        .requestMatchers("/api/auth/forgotConfirm").permitAll()
                         .requestMatchers(
                                 "/v3/api-docs/**",
                                 "/v3/api-docs.yaml",

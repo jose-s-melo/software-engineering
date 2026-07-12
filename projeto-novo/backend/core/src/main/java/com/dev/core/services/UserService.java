@@ -100,4 +100,13 @@ public class UserService {
         user = userRepository.save(user);
         return new UserResponseDTO(user.getId(), user.getEmail(), user.getRole());
     }
+
+    public UserResponseDTO changeForgotPassword(String email, String newPassword) {
+        User user = userRepository.findByEmail(email).orElseThrow(() -> new UserNotFoundException());
+        
+        user.setPassword(encoder.encode(newPassword));
+
+        user = userRepository.save(user);
+        return new UserResponseDTO(user.getId(), user.getEmail(), user.getRole());
+    }
 }
