@@ -1,5 +1,6 @@
 package com.dev.core.models;
 
+import java.time.Instant;
 import java.util.UUID;
 
 import jakarta.persistence.Column;
@@ -28,4 +29,7 @@ public class ForgotPasswordEntity {
 
     @Column(nullable = false)
     private String email;
+
+    @Column(nullable = false)
+    private Instant createdAt;
 }

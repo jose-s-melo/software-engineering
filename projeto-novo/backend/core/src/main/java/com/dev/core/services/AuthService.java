@@ -1,6 +1,9 @@
 package com.dev.core.services;
 
 import java.security.SecureRandom;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -59,6 +62,8 @@ public class AuthService {
     }
 
     public void forgotPassword(ForgotPasswordRequestDTO body) {
+        invalidateCodes();
+        
         int length = 4;
         String permittedChars = "0123456789";
 
@@ -74,19 +79,35 @@ public class AuthService {
         ForgotPasswordEntity forgotPasswordEntity = ForgotPasswordEntity.builder()
                                                                         .code(randomCode)
                                                                         .email(body.email())
+                                                                        .createdAt(Instant.now())
                                                                         .build();
 
         forgotPasswordEntityRepository.save(forgotPasswordEntity);
     }
 
     public void confirmForgotPassword(ConfirmForgotPasswordRequestDTO body) {
-        
+        invalidateCodes();
+
         ForgotPasswordEntity forgotPasswordEntity = forgotPasswordEntityRepository.findByEmail(body.email()).orElseThrow(() -> new RuntimeException());
 
         if (forgotPasswordEntity.getCode().equals(body.code())) {
             userService.changeForgotPassword(body.email(), body.newPassword());
+
+            forgotPasswordEntityRepository.deleteById(forgotPasswordEntity.getId());
         } else {
             throw new RuntimeException("Código inválido");
+        }
+    }
+
+    private void invalidateCodes() {
+        List<ForgotPasswordEntity> all = forgotPasswordEntityRepository.findAll();
+
+        for (ForgotPasswordEntity forgotPasswordEntity : all) {
+            Duration duration = Duration.between(forgotPasswordEntity.getCreatedAt(), Instant.now());
+
+            if (duration.toMinutes() >= 2) {
+                forgotPasswordEntityRepository.deleteById(forgotPasswordEntity.getId());
+            }
         }
     }
 
