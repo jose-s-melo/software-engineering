@@ -1,5 +1,8 @@
 package com.dev.core.services;
 
+import com.dev.core.dtos.TokenResponseDTO;
+import com.dev.core.dtos.UserResponseDTO;
+import com.dev.core.models.user.User;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -22,13 +25,14 @@ public class AuthService {
     @Autowired
     private UserService userService;
 
-    public String login(LoginRequestDTO dto) {
+    public TokenResponseDTO login(LoginRequestDTO dto) {
         String email = dto.email();
         String password = dto.password();
         UsernamePasswordAuthenticationToken usernamePasswordAuthenticationToken = new UsernamePasswordAuthenticationToken(email, password);
         Authentication authentication = authenticationManager.authenticate(usernamePasswordAuthenticationToken);
 
-        return tokenService.generateToken((UserDetails) authentication.getPrincipal());
+        User user = (User) authentication.getPrincipal();
+        return new TokenResponseDTO(tokenService.generateToken((UserDetails) authentication.getPrincipal()), "Success", new UserResponseDTO(user.getId(), user.getEmail(), user.getRole()));
     }
 
     public void register(RegisterRequestDTO data) {

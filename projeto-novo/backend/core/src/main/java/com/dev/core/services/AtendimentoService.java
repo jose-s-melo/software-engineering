@@ -9,6 +9,8 @@ import com.dev.core.models.user.User;
 import com.dev.core.repositories.AgendamentoRepository;
 import com.dev.core.repositories.ServicoRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
 import com.dev.core.repositories.AtendimentoRepository;
@@ -31,7 +33,7 @@ public class AtendimentoService {
     private final ServicoRepository servicoRepository; // Repositório da sua entidade Servico
 
     @Transactional
-    public Atendimento agendarServico(AtendimentoRequestDTO dto) {
+    public Atendimento agendarServico(AtendimentoRequestDTO dto, UserDetails user) {
         // 1. Busca o serviço escolhido para garantir que ele existe
         Servico servico = servicoRepository.findById(dto.servicoId())
                 .orElseThrow(() -> new RuntimeException("Serviço não encontrado."));
@@ -53,8 +55,8 @@ public class AtendimentoService {
 
         // 5. Cria e salva o Atendimento
         Atendimento atendimento = Atendimento.builder()
-                .emailClient(dto.emailCliente())
                 .servico(servico)
+                .emailClient(user.getUsername())
                 .hora(horaAtendimento)
                 .status(StatusAtendimento.CONFIRMADO) // ou PENDENTE, dependendo do seu fluxo
                 .build();

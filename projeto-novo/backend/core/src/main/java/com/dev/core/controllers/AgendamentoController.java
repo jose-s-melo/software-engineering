@@ -47,7 +47,7 @@ public class AgendamentoController {
             @ApiResponse(responseCode = "400", description = "Dados da requisição inválidos")
     })
     @PostMapping
-    public ResponseEntity<AgendamentoResponseDTO> criarAgenda(@RequestBody AgendamentoRequestDTO dto) {
+    public ResponseEntity<AgendamentoResponseDTO> criarAgendaDisponibilidade(@RequestBody AgendamentoRequestDTO dto) {
         // O Service processa os dados usando os campos do DTO de entrada
         Agendamento agendamento = agendamentoService.criarAgenda(dto.data(), dto.horariosDisponiveis());
 

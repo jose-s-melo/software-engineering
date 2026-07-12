@@ -3,6 +3,7 @@ package com.dev.core.controllers;
 import com.dev.core.dtos.AtendimentoRequestDTO;
 import com.dev.core.dtos.AtendimentoResponseDTO;
 import com.dev.core.models.Atendimento;
+import com.dev.core.models.user.User;
 import com.dev.core.services.AtendimentoService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -10,6 +11,8 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 @Tag(name = "Atendimentos", description = "Endpoints para os clientes realizarem reservas de serviços")
@@ -24,8 +27,8 @@ public class AtendimentoController {
             description = "Reserva um horário específico na grade do barbeiro e vincula ao serviço solicitado pelo cliente.")
     @ApiResponse(responseCode = "201", description = "Atendimento agendado com sucesso")
     @PostMapping
-    public ResponseEntity<AtendimentoResponseDTO> agendar(@RequestBody AtendimentoRequestDTO dto) {
-        Atendimento atendimento = atendimentoService.agendarServico(dto);
+    public ResponseEntity<AtendimentoResponseDTO> reservarHorario(@RequestBody AtendimentoRequestDTO dto, @AuthenticationPrincipal UserDetails user) {
+        Atendimento atendimento = atendimentoService.agendarServico(dto, user);
 
         // Mapeia para o DTO de Saída
         AtendimentoResponseDTO response = new AtendimentoResponseDTO(
