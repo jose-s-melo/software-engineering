@@ -1,30 +1,31 @@
 package com.dev.core.services;
 
-import com.auth0.jwt.JWT;
-import com.auth0.jwt.algorithms.Algorithm;
-import com.auth0.jwt.exceptions.JWTCreationException;
-import com.auth0.jwt.exceptions.JWTVerificationException;
+import java.time.Instant;
+import java.util.List;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
-import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.ZoneOffset;
-import java.util.List;
+import com.auth0.jwt.JWT;
+import com.auth0.jwt.algorithms.Algorithm;
+import com.auth0.jwt.exceptions.JWTCreationException;
+import com.auth0.jwt.exceptions.JWTVerificationException;
 
 @Service
 public class TokenService {
 
-    public final String ISSUER = "hardcoded";
+    @Value("${api.security.issuer}")
+    public String ISSUER;
 
-    private final String SECRET = "hardcoded";
+    @Value("${api.security.token.secret}")
+    private String SECRET;
 
-    private final Algorithm ALGORITHM = Algorithm.HMAC256(SECRET);
 
     public String generateToken(UserDetails user) {
+        Algorithm ALGORITHM = Algorithm.HMAC256(SECRET);
         try {
             List<String> roles = user.getAuthorities()
                     .stream()
@@ -44,6 +45,7 @@ public class TokenService {
 
     public String validateToken(String token) {
         try {
+            Algorithm ALGORITHM = Algorithm.HMAC256(SECRET);
             return JWT.require(ALGORITHM)
                     .withIssuer(ISSUER)
                     .build()

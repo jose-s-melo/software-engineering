@@ -1,13 +1,26 @@
 package com.dev.core.services;
 
-import com.dev.core.dtos.*;
-import com.dev.core.models.user.User;
+import java.security.SecureRandom;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
+
+import com.dev.core.dtos.ChangePasswordRequestDTO;
+import com.dev.core.dtos.ConfirmForgotPasswordRequestDTO;
+import com.dev.core.dtos.ForgotPasswordRequestDTO;
+import com.dev.core.dtos.LoginRequestDTO;
+import com.dev.core.dtos.RegisterRequestDTO;
+import com.dev.core.dtos.TokenResponseDTO;
+import com.dev.core.dtos.UserResponseDTO;
+import com.dev.core.dtos.email.SendEmailDTO;
+import com.dev.core.models.ForgotPasswordEntity;
+import com.dev.core.models.user.User;
+import com.dev.core.repositories.ForgotPasswordEntityRepository;
+import com.dev.core.services.email.EmailService;
 
 @Service
 public class AuthService {
@@ -20,6 +33,12 @@ public class AuthService {
 
     @Autowired
     private UserService userService;
+
+    @Autowired
+    private EmailService emailService;
+
+    @Autowired
+    private ForgotPasswordEntityRepository forgotPasswordEntityRepository;
 
     public TokenResponseDTO login(LoginRequestDTO dto) {
         String email = dto.email();
@@ -38,4 +57,38 @@ public class AuthService {
     public UserResponseDTO changePassword(ChangePasswordRequestDTO dto) {
         return userService.changePassword(dto);
     }
+
+    public void forgotPassword(ForgotPasswordRequestDTO body) {
+        int length = 4;
+        String permittedChars = "0123456789";
+
+        SecureRandom random = new SecureRandom();
+
+        String randomCode = random.ints(length, 0, permittedChars.length())
+            .mapToObj(permittedChars::charAt)
+            .collect(StringBuilder::new, StringBuilder::append, StringBuilder::append)
+            .toString();
+
+        emailService.sendEmail(new SendEmailDTO(body.email(), randomCode, "Código para mudar senha"));
+
+        ForgotPasswordEntity forgotPasswordEntity = ForgotPasswordEntity.builder()
+                                                                        .code(randomCode)
+                                                                        .email(body.email())
+                                                                        .build();
+
+        forgotPasswordEntityRepository.save(forgotPasswordEntity);
+    }
+
+    public void confirmForgotPassword(ConfirmForgotPasswordRequestDTO body) {
+        
+        ForgotPasswordEntity forgotPasswordEntity = forgotPasswordEntityRepository.findByEmail(body.email()).orElseThrow(() -> new RuntimeException());
+
+        if (forgotPasswordEntity.getCode().equals(body.code())) {
+            userService.changeForgotPassword(body.email(), body.newPassword());
+        } else {
+            throw new RuntimeException("Código inválido");
+        }
+    }
+
+
 }

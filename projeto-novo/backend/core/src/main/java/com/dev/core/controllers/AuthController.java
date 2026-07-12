@@ -1,8 +1,23 @@
 package com.dev.core.controllers;
 
-import com.dev.core.dtos.*;
-import com.dev.core.models.user.User;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.dev.core.dtos.ChangePasswordRequestDTO;
+import com.dev.core.dtos.ConfirmForgotPasswordRequestDTO;
+import com.dev.core.dtos.ForgotPasswordRequestDTO;
+import com.dev.core.dtos.LoginRequestDTO;
+import com.dev.core.dtos.RegisterRequestDTO;
+import com.dev.core.dtos.TokenResponseDTO;
+import com.dev.core.dtos.UserResponseDTO;
 import com.dev.core.repositories.UserRepository;
+import com.dev.core.services.AuthService;
+
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
@@ -10,17 +25,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-
-import com.dev.core.services.AuthService;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -179,4 +183,18 @@ public class AuthController {
             return ResponseEntity.badRequest().body(null);
         }
     }
+
+    
+    @PostMapping("/forgot")
+    public ResponseEntity<Void> forgotPassword(@RequestBody ForgotPasswordRequestDTO body) {
+        authService.forgotPassword(body);
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/forgotConfirm")
+    public ResponseEntity<Void> confirmForgotPassword(@RequestBody ConfirmForgotPasswordRequestDTO body) {
+        authService.confirmForgotPassword(body);
+        return ResponseEntity.ok().build();
+    }
+    
 }
