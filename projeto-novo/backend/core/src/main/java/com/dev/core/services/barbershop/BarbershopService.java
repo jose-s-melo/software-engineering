@@ -31,7 +31,7 @@ public class BarbershopService {
     private AddressMapper addressMapper;
     
     public BarbershopResponseDTO registerBarbershop(BarbershopRegisterDTO dto) {
-        if (!validateBarbershopParams(dto)) {
+        if (!validateCreateDTO(dto)) {
             throw new InvalidBarbershopException();
         }
 
@@ -61,7 +61,7 @@ public class BarbershopService {
             throw new BarbershopNotFoundException();   
         }
 
-        if (!validateBarbershopParams(dto)) {
+        if (!validateUpdateDTO(dto)) {
             throw new InvalidBarbershopException();
         }
         
@@ -101,29 +101,25 @@ public class BarbershopService {
                 .toList();
     }
 
-    private boolean validateBarbershopParams(BarbershopRegisterDTO dto){
-        Boolean result = true;
+    private boolean validateCreateDTO(BarbershopRegisterDTO dto){
+        return validateParams(dto.name(), dto.username());
+    }
 
-        if (dto.name() == null || dto.name().isBlank()) {
+    private boolean validateUpdateDTO(BarbershopUpdateDTO dto){
+        return validateParams(dto.name(), dto.username());
+    }
+
+    private boolean validateParams(String name, String username) {
+        boolean result = true;
+
+        if (name == null || name.isBlank()) {
             result = false;
         }
-        if (dto.username() == null || dto.username().isBlank()) {
+        if (username == null || username.isBlank()) {
             result = false;
         }
 
         return result;
     }
-    
-    private boolean validateBarbershopParams(BarbershopUpdateDTO dto){
-        Boolean result = true;
 
-        if (dto.name() == null || dto.name().isBlank()) {
-            result = false;
-        }
-        if (dto.username() == null || dto.username().isBlank()) {
-            result = false;
-        }
-
-        return result;
-    }
 }

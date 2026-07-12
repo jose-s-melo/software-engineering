@@ -53,10 +53,9 @@ public class BarbershopController {
             description = "Dados inválidos"
         )
     })
-    public ResponseEntity<Void> registerBarbershop(
+    public ResponseEntity<BarbershopResponseDTO> registerBarbershop(
             @RequestBody BarbershopRegisterDTO body) {
-        service.registerBarbershop(body);
-        return ResponseEntity.status(HttpStatus.CREATED).build();
+        return ResponseEntity.status(HttpStatus.CREATED).body(service.registerBarbershop(body));
     }
 
     @DeleteMapping("/{id}")
