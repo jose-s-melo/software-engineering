@@ -9,9 +9,6 @@ import java.util.UUID;
 @Schema(description = "Dados para solicitar um novo atendimento/reserva")
 public record AtendimentoRequestDTO(
 
-        @Schema(description = "E-mail do cliente que está realizando o agendamento", example = "cliente@email.com")
-        @NotBlank String emailCliente,
-
         @Schema(description = "ID do serviço escolhido pelo cliente", example = "a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d")
         @NotNull UUID servicoId,
 
