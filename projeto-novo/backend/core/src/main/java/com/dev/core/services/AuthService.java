@@ -1,7 +1,6 @@
 package com.dev.core.services;
 
-import com.dev.core.dtos.TokenResponseDTO;
-import com.dev.core.dtos.UserResponseDTO;
+import com.dev.core.dtos.*;
 import com.dev.core.models.user.User;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -9,9 +8,6 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
-
-import com.dev.core.dtos.LoginRequestDTO;
-import com.dev.core.dtos.RegisterRequestDTO;
 
 @Service
 public class AuthService {
@@ -37,5 +33,9 @@ public class AuthService {
 
     public void register(RegisterRequestDTO data) {
         userService.addUser(data);
+    }
+
+    public UserResponseDTO changePassword(ChangePasswordRequestDTO dto) {
+        return userService.changePassword(dto);
     }
 }
