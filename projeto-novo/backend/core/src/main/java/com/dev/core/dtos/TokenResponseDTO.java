@@ -1,8 +1,8 @@
 package com.dev.core.dtos;
 
-import io.swagger.v3.oas.annotations.media.Schema;
-
 import java.io.Serializable;
+
+import io.swagger.v3.oas.annotations.media.Schema;
 
 @Schema(description = "Resposta da autenticação contendo o token JWT e os dados do usuário autenticado")
 public record TokenResponseDTO(
@@ -22,7 +22,7 @@ public record TokenResponseDTO(
         @Schema(
                 description = "Dados do usuário autenticado"
         )
-        UserResponseDTO dto
+        UserResponseDTO user
 
 ) implements Serializable {
 }

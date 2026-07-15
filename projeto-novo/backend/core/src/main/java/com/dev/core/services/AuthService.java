@@ -50,7 +50,10 @@ public class AuthService {
         Authentication authentication = authenticationManager.authenticate(usernamePasswordAuthenticationToken);
 
         User user = (User) authentication.getPrincipal();
-        return new TokenResponseDTO(tokenService.generateToken((UserDetails) authentication.getPrincipal()), "Success", new UserResponseDTO(user.getId(), user.getEmail(), user.getRole()));
+
+        TokenResponseDTO tokenResponseDTO = new TokenResponseDTO(tokenService.generateToken((UserDetails) authentication.getPrincipal()), "Success", new UserResponseDTO(user.getId(), user.getEmail(), user.getRole()));
+
+        return tokenResponseDTO;
     }
 
     public void register(RegisterRequestDTO data) {
