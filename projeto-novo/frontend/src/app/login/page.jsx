@@ -145,7 +145,7 @@ function LoginForm({ onSwitch }) {
         // Direciona de acordo com o perfil
         if (data.user.role === "ADMIN") {
           router.push("/admin/dashboard");
-        } else if (data.user.role === "COMMON") {
+        } else if (data.user.role === "CLIENTE") {
           router.push("/agendamento");
         } else {
           setError("Perfil de usuário não reconhecido.");

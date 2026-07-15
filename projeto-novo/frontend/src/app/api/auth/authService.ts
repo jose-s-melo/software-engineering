@@ -1,6 +1,6 @@
 import api from "./api";
 
-export async function login(data: LoginRequest) {
+export async function login(data: LoginRequest): Promise<TokenResponse> {
   const tokenResponse: TokenResponse = (await api.post("auth/login", data)).data;
   localStorage.setItem("token", tokenResponse.token);
   return tokenResponse;
