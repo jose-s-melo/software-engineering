@@ -1,9 +1,11 @@
 package com.dev.core.repositories;
 
+import com.dev.core.models.user.User;
+import java.util.Optional;
+import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-import com.dev.core.models.User;
+public interface UserRepository extends JpaRepository<User, UUID> {
 
-public interface UserRepository extends JpaRepository<User, String> {
-
+    Optional<User> findByEmail(String email);
 }
