@@ -7,10 +7,6 @@ import java.util.List;
 import java.util.UUID;
 
 public record AgendaRequestDTO(
-        @NotNull(message = "O ID do barbeiro é obrigatório")
-        UUID barbeiroId,
-
-        @NotEmpty(message = "A agenda deve ter pelo menos um dia de atendimento")
-        @Valid
-        List<HorarioAtendimentoDTO> horariosDaSemana
-) {}
+        @NotNull(message = "O ID do barbeiro é obrigatório") UUID barbeiroId,
+        @NotEmpty(message = "A agenda deve ter pelo menos um dia de atendimento") @Valid
+                List<HorarioAtendimentoDTO> horariosDaSemana) {}

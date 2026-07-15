@@ -1,16 +1,13 @@
 package com.dev.core.services;
 
-import com.dev.core.dtos.ServicoDTO;
 import com.dev.core.dtos.ServicoResponseDTO;
 import com.dev.core.models.Servico;
 import com.dev.core.repositories.ServicoRepository;
-import org.springframework.stereotype.Service;
-
 import jakarta.persistence.EntityNotFoundException;
-import lombok.RequiredArgsConstructor;
-
 import java.util.List;
 import java.util.UUID;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
@@ -23,9 +20,10 @@ public class ServicoServiceImpl {
     }
 
     public Servico findById(UUID id) {
-        return servicoRepository.findById(id)
-                .orElseThrow(() ->
-                        new EntityNotFoundException("Serviço não encontrado com id: " + id));
+        return servicoRepository
+                .findById(id)
+                .orElseThrow(
+                        () -> new EntityNotFoundException("Serviço não encontrado com id: " + id));
     }
 
     public Servico create(Servico servico) {
@@ -49,14 +47,14 @@ public class ServicoServiceImpl {
     }
 
     public List<ServicoResponseDTO> findAllDto() {
-        return servicoRepository.findAll()
-                .stream()
-                .map(servico -> new ServicoResponseDTO(
-                        servico.getId(),
-                        servico.getNome(),
-                        servico.getPreco(),
-                        servico.getTempoEstimado()
-                ))
+        return servicoRepository.findAll().stream()
+                .map(
+                        servico ->
+                                new ServicoResponseDTO(
+                                        servico.getId(),
+                                        servico.getNome(),
+                                        servico.getPreco(),
+                                        servico.getTempoEstimado()))
                 .toList();
     }
 }

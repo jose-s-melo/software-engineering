@@ -7,5 +7,4 @@ public record AgendaResponseDTO(
         UUID id,
         UUID barbeiroId,
         String nomeBarbeiro,
-        List<HorarioAtendimentoDTO> horariosDaSemana
-) {}
+        List<HorarioAtendimentoDTO> horariosDaSemana) {}

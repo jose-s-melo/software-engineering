@@ -5,8 +5,8 @@ import com.dev.core.exceptions.EmailAlreadyExistsException;
 import com.dev.core.exceptions.InvalidUserException;
 import com.dev.core.models.Client;
 import com.dev.core.repositories.ClientRepository;
-import java.util.UUID;
 import java.util.List;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
@@ -42,17 +42,21 @@ public class ClientService {
     }
 
     public Client updateClient(UUID id, String name, String email, String phone) {
-        Client targetClient = clientRepository.findById(id).orElseThrow(ClientNotFoundException::new);
+        Client targetClient =
+                clientRepository.findById(id).orElseThrow(ClientNotFoundException::new);
 
         validarCamposObrigatorios(name, email);
 
         String normalizedEmail = normalizeEmail(email);
 
-        clientRepository.findByEmail(normalizedEmail).ifPresent(existing -> {
-            if (!existing.getId().equals(id)) {
-                throw new EmailAlreadyExistsException();
-            }
-        });
+        clientRepository
+                .findByEmail(normalizedEmail)
+                .ifPresent(
+                        existing -> {
+                            if (!existing.getId().equals(id)) {
+                                throw new EmailAlreadyExistsException();
+                            }
+                        });
 
         targetClient.setName(name);
         targetClient.setEmail(normalizedEmail);

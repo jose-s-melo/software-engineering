@@ -11,5 +11,4 @@ public interface ServiceOfferingMapper {
     ServiceOffering toEntity(ServiceOfferingCreateDTO ServiceOfferingCreateDTO);
 
     ServiceOfferingResponseDTO toResponse(ServiceOffering ServiceOffering);
-
 }

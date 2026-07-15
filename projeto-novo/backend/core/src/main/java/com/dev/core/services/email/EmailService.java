@@ -6,6 +6,7 @@ import com.dev.core.models.email.Email;
 import com.dev.core.models.email.StatusEmail;
 import com.dev.core.repositories.EmailRepository;
 import jakarta.transaction.Transactional;
+import java.time.LocalDateTime;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.MailException;
@@ -13,21 +14,16 @@ import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
-
 @Service
 public class EmailService {
 
-    @Autowired
-    private EmailRepository repository;
+    @Autowired private EmailRepository repository;
 
-    @Autowired
-    private JavaMailSender mailSender;
+    @Autowired private JavaMailSender mailSender;
 
-    @Autowired
-    private EmailMapper mapper;
+    @Autowired private EmailMapper mapper;
 
-    @Value("${MAIL_USERNAME}")
+    @Value("${MAIL_USERNAME:no-reply@localhost}")
     private String emailFrom;
 
     @Transactional

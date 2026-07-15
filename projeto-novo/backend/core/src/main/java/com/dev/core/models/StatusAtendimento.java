@@ -1,8 +1,9 @@
 package com.dev.core.models;
 
-/**
- * StatusAtendimento
- */
+/** StatusAtendimento */
 public enum StatusAtendimento {
-    CONFIRMADO, PENDENTE, CANCELADO, AGENDADO
+    CONFIRMADO,
+    PENDENTE,
+    CANCELADO,
+    AGENDADO
 }

@@ -1,38 +1,42 @@
 package com.dev.core;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
-import com.auth0.jwt.exceptions.JWTDecodeException;
 import com.dev.core.models.user.User;
 import com.dev.core.models.user.UserRole;
 import com.dev.core.services.TokenService;
-
+import java.time.Instant;
+import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-
-import java.time.Instant;
-import java.util.UUID;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import org.springframework.test.util.ReflectionTestUtils;
 
 /**
  * Testes unitários para TokenService.
  *
- * Escopo: geração, validação e verificação de role (isAdmin) em tokens JWT.
- * TokenService não possui dependências externas — instanciado diretamente, sem mocks.
- *
+ * <p>Escopo: geração, validação e verificação de role (isAdmin) em tokens JWT. TokenService não
+ * possui dependências externas — instanciado diretamente, sem mocks. Os campos ISSUER e SECRET são
+ * anotados com @Value e só são preenchidos pelo Spring dentro de um ApplicationContext; como o
+ * teste instancia a classe com "new", eles são injetados manualmente via ReflectionTestUtils com os
+ * mesmos valores default definidos em application.properties.
  */
 @DisplayName("TokenService")
 class TokenServiceTest {
+
+    private static final String ISSUER = "core";
+    private static final String SECRET = "CHAVESECRETAALEATORIA1234567890HARDCODED";
 
     private TokenService tokenService;
 
     @BeforeEach
     void setUp() {
         tokenService = new TokenService();
+        ReflectionTestUtils.setField(tokenService, "ISSUER", ISSUER);
+        ReflectionTestUtils.setField(tokenService, "SECRET", SECRET);
     }
 
     // ── Helpers ────────────────────────────────────────────────────────────────
@@ -48,17 +52,16 @@ class TokenServiceTest {
     }
 
     /**
-     * Cria um token já expirado usando a mesma chave e issuer hard-coded do TokenService,
-     * útil para testar o caminho de rejeição em validateToken.
+     * Cria um token já expirado usando o mesmo issuer/secret configurados no setUp, útil para
+     * testar o caminho de rejeição em validateToken.
      */
     private String buildExpiredToken(String subject) {
         return JWT.create()
-                .withIssuer("hardcoded")
+                .withIssuer(ISSUER)
                 .withSubject(subject)
                 .withExpiresAt(Instant.now().minusSeconds(3600))
-                .sign(Algorithm.HMAC256("hardcoded"));
+                .sign(Algorithm.HMAC256(SECRET));
     }
-
 
     @Nested
     @DisplayName("generateToken - caminho feliz")
@@ -93,10 +96,10 @@ class TokenServiceTest {
         }
 
         @Test
-        @DisplayName("o issuer do token deve ser 'hardcoded'")
-        void issuerDoTokenDeveSerHardcoded() {
+        @DisplayName("o issuer do token deve ser o valor configurado em api.security.issuer")
+        void issuerDoTokenDeveSerOConfigurado() {
             String token = tokenService.generateToken(buildUser(UserRole.CLIENTE));
-            assertThat(JWT.decode(token).getIssuer()).isEqualTo("hardcoded");
+            assertThat(JWT.decode(token).getIssuer()).isEqualTo(ISSUER);
         }
 
         @Test
@@ -107,7 +110,8 @@ class TokenServiceTest {
         }
 
         @Test
-        @DisplayName("o claim 'roles' deve ser gravado como List<String> — acessível via asList(String.class) sem exceção")
+        @DisplayName(
+                "o claim 'roles' deve ser gravado como List<String> — acessível via asList(String.class) sem exceção")
         void claimRolesDeveSerListaDeStrings() {
             String token = tokenService.generateToken(buildUser(UserRole.BARBEIRO));
             var roles = JWT.decode(token).getClaim("roles").asList(String.class);
@@ -176,9 +180,8 @@ class TokenServiceTest {
         }
     }
 
-
     @Nested
-    @DisplayName("isAdmin — bugs documentados")
+    @DisplayName("isAdmin")
     class IsAdmin {
 
         @Test
@@ -196,6 +199,7 @@ class TokenServiceTest {
 
             assertThat(tokenService.isAdmin("Bearer " + token)).isTrue();
         }
+
         @Test
         @DisplayName("isAdmin deve retornar false para usuário BARBEIRO.")
         void isAdminComTokenBarbeiroRetornaFalse() {
@@ -205,7 +209,8 @@ class TokenServiceTest {
         }
 
         @Test
-        @DisplayName("isAdmin com token inválido retorna false sem exceção — curto-circuito no && evita asList()")
+        @DisplayName(
+                "isAdmin com token inválido retorna false sem exceção — curto-circuito no && evita asList()")
         void isAdminComTokenInvalidoRetornaFalseSemExcecao() {
 
             boolean resultado = tokenService.isAdmin("Bearer token.invalido.aqui");
@@ -213,18 +218,20 @@ class TokenServiceTest {
         }
 
         @Test
-        @DisplayName("fix esperado: com asList(String.class) o claim 'roles' contém ROLE_ADMIN para usuário ADMIN")
+        @DisplayName(
+                "fix esperado: com asList(String.class) o claim 'roles' contém ROLE_ADMIN para usuário ADMIN")
         void fixEsperadoClaimRolesLidoCorretamenteContemRoleAdmin() {
             String token = tokenService.generateToken(buildUser(UserRole.ADMIN));
             var roles = JWT.decode(token).getClaim("roles").asList(String.class);
 
             boolean isAdmin = roles.stream().anyMatch(r -> r.contains("ADMIN"));
 
-            assertThat(isAdmin).isTrue(); 
+            assertThat(isAdmin).isTrue();
         }
 
         @Test
-        @DisplayName("fix esperado: com asList(String.class) o claim 'roles' NÃO contém ADMIN para usuário BARBEIRO")
+        @DisplayName(
+                "fix esperado: com asList(String.class) o claim 'roles' NÃO contém ADMIN para usuário BARBEIRO")
         void fixEsperadoClaimRolesNaoContemAdminParaBarbeiro() {
             String token = tokenService.generateToken(buildUser(UserRole.BARBEIRO));
             var roles = JWT.decode(token).getClaim("roles").asList(String.class);

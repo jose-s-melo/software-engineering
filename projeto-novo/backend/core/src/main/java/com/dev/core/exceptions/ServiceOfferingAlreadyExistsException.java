@@ -9,6 +9,7 @@ public class ServiceOfferingAlreadyExistsException extends RuntimeException {
     public ServiceOfferingAlreadyExistsException() {
         super("Service already exists");
     }
+
     public ServiceOfferingAlreadyExistsException(String message) {
         super(message);
     }

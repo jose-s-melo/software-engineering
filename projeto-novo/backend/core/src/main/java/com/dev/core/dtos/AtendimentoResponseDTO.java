@@ -1,8 +1,7 @@
 package com.dev.core.dtos;
 
-import io.swagger.v3.oas.annotations.media.Schema;
 import com.dev.core.models.StatusAtendimento;
-import java.time.Instant;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.UUID;
 
 @Schema(description = "Dados de retorno do atendimento confirmado")
@@ -12,5 +11,4 @@ public record AtendimentoResponseDTO(
         String hora,
         String nomeServico,
         java.math.BigDecimal precoServico,
-        StatusAtendimento status
-) {}
+        StatusAtendimento status) {}

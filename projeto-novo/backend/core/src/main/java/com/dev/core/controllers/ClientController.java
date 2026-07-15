@@ -4,9 +4,9 @@ import com.dev.core.dtos.ClientRequestDTO;
 import com.dev.core.dtos.ClientResponseDTO;
 import com.dev.core.models.Client;
 import com.dev.core.services.ClientService;
-import java.util.UUID;
-import java.util.List;
 import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -21,9 +21,13 @@ public class ClientController {
     @PostMapping
     public ResponseEntity<ClientResponseDTO> addClient(@RequestBody ClientRequestDTO body) {
         UUID generatedId = UUID.randomUUID();
-        Client client = clientService.addClient(generatedId, body.getName(), body.getEmail(), body.getPhone());
-        
-        ClientResponseDTO responseBody = new ClientResponseDTO(client.getId(), client.getName(), client.getPhone(), client.getEmail());
+        Client client =
+                clientService.addClient(
+                        generatedId, body.getName(), body.getEmail(), body.getPhone());
+
+        ClientResponseDTO responseBody =
+                new ClientResponseDTO(
+                        client.getId(), client.getName(), client.getPhone(), client.getEmail());
         ResponseEntity<ClientResponseDTO> responseEntity = ResponseEntity.ok(responseBody);
         return responseEntity;
     }
@@ -39,9 +43,11 @@ public class ClientController {
     public ResponseEntity<ClientResponseDTO> getClient(@PathVariable UUID id) {
         Client client = clientService.getClient(id);
         ResponseEntity<ClientResponseDTO> responseEntity;
-        
+
         if (client != null) {
-            ClientResponseDTO responseBody = new ClientResponseDTO(client.getId(), client.getName(), client.getPhone(), client.getEmail());
+            ClientResponseDTO responseBody =
+                    new ClientResponseDTO(
+                            client.getId(), client.getName(), client.getPhone(), client.getEmail());
             responseEntity = ResponseEntity.ok(responseBody);
         } else {
             responseEntity = ResponseEntity.notFound().build();
@@ -53,22 +59,31 @@ public class ClientController {
     public ResponseEntity<List<ClientResponseDTO>> getAllClients() {
         List<Client> clients = clientService.getAllClients();
         List<ClientResponseDTO> dtoList = new ArrayList<>();
-        
+
         for (Client client : clients) {
-            dtoList.add(new ClientResponseDTO(client.getId(), client.getName(), client.getPhone(), client.getEmail()));
+            dtoList.add(
+                    new ClientResponseDTO(
+                            client.getId(),
+                            client.getName(),
+                            client.getPhone(),
+                            client.getEmail()));
         }
-        
+
         ResponseEntity<List<ClientResponseDTO>> responseEntity = ResponseEntity.ok(dtoList);
         return responseEntity;
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<ClientResponseDTO> updateClient(@PathVariable UUID id, @RequestBody ClientRequestDTO body) {
-        Client client = clientService.updateClient(id, body.getName(), body.getEmail(), body.getPhone());
+    public ResponseEntity<ClientResponseDTO> updateClient(
+            @PathVariable UUID id, @RequestBody ClientRequestDTO body) {
+        Client client =
+                clientService.updateClient(id, body.getName(), body.getEmail(), body.getPhone());
         ResponseEntity<ClientResponseDTO> responseEntity;
-        
+
         if (client != null) {
-            ClientResponseDTO responseBody = new ClientResponseDTO(client.getId(), client.getName(), client.getPhone(), client.getEmail());
+            ClientResponseDTO responseBody =
+                    new ClientResponseDTO(
+                            client.getId(), client.getName(), client.getPhone(), client.getEmail());
             responseEntity = ResponseEntity.ok(responseBody);
         } else {
             responseEntity = ResponseEntity.notFound().build();

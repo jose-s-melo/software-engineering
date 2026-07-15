@@ -2,14 +2,13 @@ package com.dev.core.models.agenda;
 
 import com.dev.core.models.user.User;
 import jakarta.persistence.*;
+import java.util.List;
+import java.util.UUID;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-
-import java.util.List;
-import java.util.UUID;
 
 @Table(name = "agendas")
 @Entity
@@ -29,9 +28,6 @@ public class Agenda {
     private User barbeiro;
 
     @ElementCollection(fetch = FetchType.EAGER)
-    @CollectionTable(
-            name = "agenda_horarios",
-            joinColumns = @JoinColumn(name = "agenda_id")
-    )
+    @CollectionTable(name = "agenda_horarios", joinColumns = @JoinColumn(name = "agenda_id"))
     private List<HorarioAtendimento> horariosDaSemana;
 }

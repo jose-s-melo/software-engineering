@@ -1,10 +1,9 @@
 package com.dev.core.models.email;
 
 import jakarta.persistence.*;
-import lombok.*;
-
 import java.time.LocalDateTime;
 import java.util.UUID;
+import lombok.*;
 
 @Getter
 @Setter
@@ -38,5 +37,4 @@ public class Email {
     @Enumerated(EnumType.STRING)
     @Column(name = "status_email", nullable = false)
     private StatusEmail statusEmail;
-
 }

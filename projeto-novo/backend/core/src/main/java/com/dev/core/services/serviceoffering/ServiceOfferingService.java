@@ -13,31 +13,29 @@ import com.dev.core.models.serviceoffering.ServiceOffering;
 import com.dev.core.repositories.BarbershopRepository;
 import com.dev.core.repositories.ServiceOfferingRepository;
 import jakarta.transaction.Transactional;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
 @Service
 public class ServiceOfferingService {
 
-    @Autowired
-    private ServiceOfferingRepository repository;
+    @Autowired private ServiceOfferingRepository repository;
 
-    @Autowired
-    private BarbershopRepository barbershopRepository;
+    @Autowired private BarbershopRepository barbershopRepository;
 
-    @Autowired
-    private ServiceOfferingMapper mapper;
+    @Autowired private ServiceOfferingMapper mapper;
 
     @Transactional
     public ServiceOfferingResponseDTO create(UUID barbershopId, ServiceOfferingCreateDTO dto) {
         validateCreateDTO(dto);
 
-        Barbershop barbershop = barbershopRepository.findById(barbershopId)
-                .orElseThrow(BarbershopNotFoundException::new);
+        Barbershop barbershop =
+                barbershopRepository
+                        .findById(barbershopId)
+                        .orElseThrow(BarbershopNotFoundException::new);
 
         if (repository.existsByNameAndBarbershopId(dto.name(), barbershopId)) {
             throw new InvalidServiceOfferingException();
@@ -53,27 +51,32 @@ public class ServiceOfferingService {
     }
 
     public ServiceOfferingResponseDTO searchById(UUID barbershopId, UUID serviceId) {
-        ServiceOffering serviceOffering = repository.findByIdAndBarbershopId(serviceId, barbershopId)
-                .orElseThrow(ServiceOfferingNotFoundException::new);
+        ServiceOffering serviceOffering =
+                repository
+                        .findByIdAndBarbershopId(serviceId, barbershopId)
+                        .orElseThrow(ServiceOfferingNotFoundException::new);
 
         return mapper.toResponse(serviceOffering);
     }
 
     public List<ServiceOfferingResponseDTO> findAll(UUID barbershopId) {
-        return repository.findByBarbershopId(barbershopId)
-                .stream()
+        return repository.findByBarbershopId(barbershopId).stream()
                 .map(mapper::toResponse)
                 .toList();
     }
 
     @Transactional
-    public ServiceOfferingResponseDTO update(UUID barbershopId, UUID serviceId, ServiceOfferingUpdateDTO dto) {
+    public ServiceOfferingResponseDTO update(
+            UUID barbershopId, UUID serviceId, ServiceOfferingUpdateDTO dto) {
         validateUpdateDTO(dto);
 
-        ServiceOffering serviceOffering = repository.findByIdAndBarbershopId(serviceId, barbershopId)
-                .orElseThrow(ServiceOfferingNotFoundException::new);
+        ServiceOffering serviceOffering =
+                repository
+                        .findByIdAndBarbershopId(serviceId, barbershopId)
+                        .orElseThrow(ServiceOfferingNotFoundException::new);
 
-        if (!dto.name().equals(serviceOffering.getName()) && repository.existsByNameAndBarbershopId(dto.name(), barbershopId)) {
+        if (!dto.name().equals(serviceOffering.getName())
+                && repository.existsByNameAndBarbershopId(dto.name(), barbershopId)) {
             throw new ServiceOfferingAlreadyExistsException();
         }
 
@@ -98,8 +101,10 @@ public class ServiceOfferingService {
 
     @Transactional
     public void delete(UUID barbershopId, UUID serviceId) {
-        ServiceOffering serviceOffering = repository.findByIdAndBarbershopId(serviceId, barbershopId)
-                .orElseThrow(ServiceOfferingNotFoundException::new);
+        ServiceOffering serviceOffering =
+                repository
+                        .findByIdAndBarbershopId(serviceId, barbershopId)
+                        .orElseThrow(ServiceOfferingNotFoundException::new);
 
         repository.delete(serviceOffering);
     }
@@ -107,7 +112,8 @@ public class ServiceOfferingService {
     @Transactional
     public void deactivate(UUID barbershopId, UUID serviceId) {
         ServiceOffering serviceOffering =
-                repository.findByIdAndBarbershopId(serviceId, barbershopId)
+                repository
+                        .findByIdAndBarbershopId(serviceId, barbershopId)
                         .orElseThrow(ServiceOfferingNotFoundException::new);
 
         serviceOffering.setActive(false);
@@ -116,7 +122,8 @@ public class ServiceOfferingService {
     @Transactional
     public void activate(UUID barbershopId, UUID serviceId) {
         ServiceOffering serviceOffering =
-                repository.findByIdAndBarbershopId(serviceId, barbershopId)
+                repository
+                        .findByIdAndBarbershopId(serviceId, barbershopId)
                         .orElseThrow(ServiceOfferingNotFoundException::new);
 
         serviceOffering.setActive(true);

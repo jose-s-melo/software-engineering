@@ -10,21 +10,18 @@ import com.dev.core.exceptions.WrongPasswordException;
 import com.dev.core.models.user.User;
 import com.dev.core.models.user.UserRole;
 import com.dev.core.repositories.UserRepository;
+import java.util.UUID;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
-import java.util.UUID;
-
 @Service
 public class UserService {
 
-    @Autowired
-    private UserRepository userRepository;
+    @Autowired private UserRepository userRepository;
 
-    @Autowired
-    private PasswordEncoder encoder;
+    @Autowired private PasswordEncoder encoder;
 
     public User addUser(RegisterRequestDTO data) {
         String normalizedEmail = normalizeEmail(data.email());
@@ -55,11 +52,14 @@ public class UserService {
 
         String normalizedEmail = normalizeEmail(email);
 
-        userRepository.findByEmail(normalizedEmail).ifPresent(existing -> {
-            if (!existing.getId().equals(userId)) {
-                throw new EmailAlreadyExistsException();
-            }
-        });
+        userRepository
+                .findByEmail(normalizedEmail)
+                .ifPresent(
+                        existing -> {
+                            if (!existing.getId().equals(userId)) {
+                                throw new EmailAlreadyExistsException();
+                            }
+                        });
 
         user.setEmail(normalizedEmail);
         user.setPassword(encoder.encode(password));
@@ -89,7 +89,10 @@ public class UserService {
     }
 
     public UserResponseDTO changePassword(ChangePasswordRequestDTO dto) {
-        User user = userRepository.findByEmail(dto.email()).orElseThrow(() -> new UserNotFoundException());
+        User user =
+                userRepository
+                        .findByEmail(dto.email())
+                        .orElseThrow(() -> new UserNotFoundException());
 
         if (encoder.matches(dto.oldPassword(), user.getPassword())) {
             user.setPassword(encoder.encode(dto.newPassword()));
@@ -102,8 +105,9 @@ public class UserService {
     }
 
     public UserResponseDTO changeForgotPassword(String email, String newPassword) {
-        User user = userRepository.findByEmail(email).orElseThrow(() -> new UserNotFoundException());
-        
+        User user =
+                userRepository.findByEmail(email).orElseThrow(() -> new UserNotFoundException());
+
         user.setPassword(encoder.encode(newPassword));
 
         user = userRepository.save(user);

@@ -1,15 +1,14 @@
 package com.dev.core.models;
 
 import jakarta.persistence.*;
+import java.time.DayOfWeek;
+import java.time.LocalDate;
+import java.util.List;
+import java.util.UUID;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
-import java.time.LocalDate;
-import java.time.DayOfWeek;
-import java.util.List;
-import java.util.UUID;
 
 @Entity
 @Table(name = "tb_agendamento")
@@ -32,7 +31,9 @@ public class Agendamento {
 
     // Criará uma tabela auxiliar automática para os horários (ex: "14:00", "14:30")
     @ElementCollection
-    @CollectionTable(name = "tb_horarios_disponiveis", joinColumns = @JoinColumn(name = "agendamento_id"))
+    @CollectionTable(
+            name = "tb_horarios_disponiveis",
+            joinColumns = @JoinColumn(name = "agendamento_id"))
     @Column(name = "horario")
     private List<String> horariosDisponiveis;
 }

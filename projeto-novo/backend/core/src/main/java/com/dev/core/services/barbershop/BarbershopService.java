@@ -1,12 +1,5 @@
 package com.dev.core.services.barbershop;
 
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-
 import com.dev.core.dtos.barbershop.BarbershopRegisterDTO;
 import com.dev.core.dtos.barbershop.BarbershopResponseDTO;
 import com.dev.core.dtos.barbershop.BarbershopUpdateDTO;
@@ -17,19 +10,21 @@ import com.dev.core.mappers.BarbershopMapper;
 import com.dev.core.models.barbershop.Address;
 import com.dev.core.models.barbershop.Barbershop;
 import com.dev.core.repositories.BarbershopRepository;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
 @Service
 public class BarbershopService {
 
-    @Autowired
-    private BarbershopRepository repository;
+    @Autowired private BarbershopRepository repository;
 
-    @Autowired
-    private BarbershopMapper barbershopMapper;
+    @Autowired private BarbershopMapper barbershopMapper;
 
-    @Autowired
-    private AddressMapper addressMapper;
-    
+    @Autowired private AddressMapper addressMapper;
+
     public BarbershopResponseDTO registerBarbershop(BarbershopRegisterDTO dto) {
         if (!validateCreateDTO(dto)) {
             throw new InvalidBarbershopException();
@@ -42,7 +37,7 @@ public class BarbershopService {
         return barbershopMapper.toResponse(saved);
     }
 
-    public BarbershopResponseDTO deleteBarbershop(UUID id){
+    public BarbershopResponseDTO deleteBarbershop(UUID id) {
         Optional<Barbershop> optional = repository.findById(id);
 
         if (optional.isEmpty()) {
@@ -50,27 +45,27 @@ public class BarbershopService {
         }
 
         repository.deleteById(id);
-        
+
         return barbershopMapper.toResponse(optional.get());
     }
 
-    public BarbershopResponseDTO updateBarbershop(UUID id, BarbershopUpdateDTO dto){
+    public BarbershopResponseDTO updateBarbershop(UUID id, BarbershopUpdateDTO dto) {
         Optional<Barbershop> optional = repository.findById(id);
 
         if (optional.isEmpty()) {
-            throw new BarbershopNotFoundException();   
+            throw new BarbershopNotFoundException();
         }
 
         if (!validateUpdateDTO(dto)) {
             throw new InvalidBarbershopException();
         }
-        
+
         optional.get().setName(dto.name());
         optional.get().setUsername(dto.username());
 
         Address location = optional.get().getLocation();
         Address newLocation = addressMapper.toEntity(dto.location());
-        
+
         location.setStreet(newLocation.getStreet());
         location.setNumber(newLocation.getNumber());
         location.setNeighborhood(newLocation.getNeighborhood());
@@ -84,7 +79,7 @@ public class BarbershopService {
         return barbershopMapper.toResponse(optional.get());
     }
 
-    public BarbershopResponseDTO getBarbershop(UUID id){
+    public BarbershopResponseDTO getBarbershop(UUID id) {
         Optional<Barbershop> optional = repository.findById(id);
 
         if (optional.isEmpty()) {
@@ -95,17 +90,14 @@ public class BarbershopService {
     }
 
     public List<BarbershopResponseDTO> getAllBarbershops() {
-        return repository.findAll()
-                .stream()
-                .map(barbershopMapper::toResponse)
-                .toList();
+        return repository.findAll().stream().map(barbershopMapper::toResponse).toList();
     }
 
-    private boolean validateCreateDTO(BarbershopRegisterDTO dto){
+    private boolean validateCreateDTO(BarbershopRegisterDTO dto) {
         return validateParams(dto.name(), dto.username());
     }
 
-    private boolean validateUpdateDTO(BarbershopUpdateDTO dto){
+    private boolean validateUpdateDTO(BarbershopUpdateDTO dto) {
         return validateParams(dto.name(), dto.username());
     }
 
@@ -121,5 +113,4 @@ public class BarbershopService {
 
         return result;
     }
-
 }

@@ -2,11 +2,10 @@ package com.dev.core.models.serviceoffering;
 
 import com.dev.core.models.barbershop.Barbershop;
 import jakarta.persistence.*;
-import lombok.*;
-
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.util.UUID;
+import lombok.*;
 
 @Entity
 @Builder
@@ -17,12 +16,10 @@ import java.util.UUID;
 @Table(
         name = "service_offering",
         uniqueConstraints = {
-                @UniqueConstraint(
-                        name = "uk_service_name_barbershop",
-                        columnNames = {"name", "barbershop_id"}
-                )
-        }
-)
+            @UniqueConstraint(
+                    name = "uk_service_name_barbershop",
+                    columnNames = {"name", "barbershop_id"})
+        })
 public class ServiceOffering {
 
     @Id
@@ -51,5 +48,4 @@ public class ServiceOffering {
     private Barbershop barbershop;
 
     private Duration duration;
-
 }

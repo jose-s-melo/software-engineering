@@ -1,11 +1,7 @@
 package com.dev.core.repositories;
 
+import com.dev.core.models.Atendimento;
 import java.util.UUID;
-
 import org.springframework.data.jpa.repository.JpaRepository;
 
-import com.dev.core.models.Atendimento;
-
-public interface AtendimentoRepository extends JpaRepository<Atendimento, UUID>{
-
-}
+public interface AtendimentoRepository extends JpaRepository<Atendimento, UUID> {}

@@ -1,5 +1,11 @@
 package com.dev.core;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.*;
+
 import com.dev.core.dtos.RegisterRequestDTO;
 import com.dev.core.exceptions.EmailAlreadyExistsException;
 import com.dev.core.exceptions.InvalidUserException;
@@ -8,7 +14,8 @@ import com.dev.core.models.user.User;
 import com.dev.core.models.user.UserRole;
 import com.dev.core.repositories.UserRepository;
 import com.dev.core.services.UserService;
-
+import java.util.Optional;
+import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -19,44 +26,29 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
-import java.util.Optional;
-import java.util.UUID;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.*;
-
 /**
  * Testes unitários para UserService.
  *
- * Escopo: lógica pura de cadastro/atualização/remoção de usuário.
- * UserRepository e PasswordEncoder são mockados.
+ * <p>Escopo: lógica pura de cadastro/atualização/remoção de usuário. UserRepository e
+ * PasswordEncoder são mockados.
  */
 @ExtendWith(MockitoExtension.class)
 @DisplayName("UserService")
 class UserServiceTest {
 
-    @Mock
-    private UserRepository userRepository;
+    @Mock private UserRepository userRepository;
 
-    @Mock
-    private PasswordEncoder encoder;
+    @Mock private PasswordEncoder encoder;
 
-    @InjectMocks
-    private UserService userService;
+    @InjectMocks private UserService userService;
 
     private RegisterRequestDTO validRegisterDTO;
 
     @BeforeEach
     void setUp() {
-        validRegisterDTO = new RegisterRequestDTO(
-                "João da Silva",
-                "joao@email.com",
-                "senha123",
-                "11999998888"
-        );
+        validRegisterDTO =
+                new RegisterRequestDTO(
+                        "João da Silva", "joao@email.com", "senha123", "11999998888");
     }
 
     // ---------------------------------------------------------------
@@ -72,7 +64,8 @@ class UserServiceTest {
         void deveCadastrarUsuarioComSucesso() {
             when(userRepository.findByEmail("joao@email.com")).thenReturn(Optional.empty());
             when(encoder.encode(validRegisterDTO.password())).thenReturn("HASH_FAKE");
-            when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
+            when(userRepository.save(any(User.class)))
+                    .thenAnswer(invocation -> invocation.getArgument(0));
 
             User criado = userService.addUser(validRegisterDTO);
 
@@ -88,7 +81,8 @@ class UserServiceTest {
         void usuarioCadastradoDeveSerSempreCliente() {
             when(userRepository.findByEmail(anyString())).thenReturn(Optional.empty());
             when(encoder.encode(anyString())).thenReturn("HASH_FAKE");
-            when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
+            when(userRepository.save(any(User.class)))
+                    .thenAnswer(invocation -> invocation.getArgument(0));
 
             User criado = userService.addUser(validRegisterDTO);
 
@@ -100,7 +94,8 @@ class UserServiceTest {
         void senhaDevePassarPeloEncoder() {
             when(userRepository.findByEmail(anyString())).thenReturn(Optional.empty());
             when(encoder.encode("senha123")).thenReturn("$2a$10$HASHDIFERENTE");
-            when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
+            when(userRepository.save(any(User.class)))
+                    .thenAnswer(invocation -> invocation.getArgument(0));
 
             User criado = userService.addUser(validRegisterDTO);
 
@@ -122,9 +117,13 @@ class UserServiceTest {
         @Test
         @DisplayName("deve lançar EmailAlreadyExistsException quando email já está cadastrado")
         void deveLancarExcecaoQuandoEmailJaExiste() {
-            when(userRepository.findByEmail("joao@email.com")).thenReturn(
-                    Optional.of(User.builder().id(UUID.randomUUID()).email("joao@email.com").build())
-            );
+            when(userRepository.findByEmail("joao@email.com"))
+                    .thenReturn(
+                            Optional.of(
+                                    User.builder()
+                                            .id(UUID.randomUUID())
+                                            .email("joao@email.com")
+                                            .build()));
 
             assertThatThrownBy(() -> userService.addUser(validRegisterDTO))
                     .isInstanceOf(EmailAlreadyExistsException.class);
@@ -143,14 +142,16 @@ class UserServiceTest {
     class AddUserBordas {
 
         @Test
-        @DisplayName("borda: deve normalizar email com letras maiúsculas para minúsculas antes de salvar")
+        @DisplayName(
+                "borda: deve normalizar email com letras maiúsculas para minúsculas antes de salvar")
         void deveNormalizarEmailMaiusculoParaMinusculo() {
-            RegisterRequestDTO dtoComEmailMaiusculo = new RegisterRequestDTO(
-                    "João da Silva", "JOAO@EMAIL.COM", "senha123", "11999998888"
-            );
+            RegisterRequestDTO dtoComEmailMaiusculo =
+                    new RegisterRequestDTO(
+                            "João da Silva", "JOAO@EMAIL.COM", "senha123", "11999998888");
             when(userRepository.findByEmail("joao@email.com")).thenReturn(Optional.empty());
             when(encoder.encode(anyString())).thenReturn("HASH_FAKE");
-            when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
+            when(userRepository.save(any(User.class)))
+                    .thenAnswer(invocation -> invocation.getArgument(0));
 
             User criado = userService.addUser(dtoComEmailMaiusculo);
 
@@ -158,14 +159,19 @@ class UserServiceTest {
         }
 
         @Test
-        @DisplayName("borda: deve detectar duplicidade mesmo com capitalização diferente do email já cadastrado")
+        @DisplayName(
+                "borda: deve detectar duplicidade mesmo com capitalização diferente do email já cadastrado")
         void deveDetectarDuplicidadeComCapitalizacaoDiferente() {
-            RegisterRequestDTO dtoComEmailMaiusculo = new RegisterRequestDTO(
-                    "João da Silva", "JOAO@EMAIL.COM", "senha123", "11999998888"
-            );
-            when(userRepository.findByEmail("joao@email.com")).thenReturn(
-                    Optional.of(User.builder().id(UUID.randomUUID()).email("joao@email.com").build())
-            );
+            RegisterRequestDTO dtoComEmailMaiusculo =
+                    new RegisterRequestDTO(
+                            "João da Silva", "JOAO@EMAIL.COM", "senha123", "11999998888");
+            when(userRepository.findByEmail("joao@email.com"))
+                    .thenReturn(
+                            Optional.of(
+                                    User.builder()
+                                            .id(UUID.randomUUID())
+                                            .email("joao@email.com")
+                                            .build()));
 
             assertThatThrownBy(() -> userService.addUser(dtoComEmailMaiusculo))
                     .isInstanceOf(EmailAlreadyExistsException.class);
@@ -174,14 +180,16 @@ class UserServiceTest {
         }
 
         @Test
-        @DisplayName("borda: deve remover espaços nas pontas do email antes de checar duplicidade e salvar")
+        @DisplayName(
+                "borda: deve remover espaços nas pontas do email antes de checar duplicidade e salvar")
         void deveRemoverEspacosNasPontasDoEmail() {
-            RegisterRequestDTO dtoComEspaco = new RegisterRequestDTO(
-                    "João da Silva", "  joao@email.com  ", "senha123", "11999998888"
-            );
+            RegisterRequestDTO dtoComEspaco =
+                    new RegisterRequestDTO(
+                            "João da Silva", "  joao@email.com  ", "senha123", "11999998888");
             when(userRepository.findByEmail("joao@email.com")).thenReturn(Optional.empty());
             when(encoder.encode(anyString())).thenReturn("HASH_FAKE");
-            when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
+            when(userRepository.save(any(User.class)))
+                    .thenAnswer(invocation -> invocation.getArgument(0));
 
             User criado = userService.addUser(dtoComEspaco);
 
@@ -189,14 +197,19 @@ class UserServiceTest {
         }
 
         @Test
-        @DisplayName("borda: não deve permitir burlar a duplicidade combinando espaço e capitalização diferentes")
+        @DisplayName(
+                "borda: não deve permitir burlar a duplicidade combinando espaço e capitalização diferentes")
         void naoDevePermitirBurlarDuplicidadeComEspacoECapitalizacao() {
-            RegisterRequestDTO dtoTentandoBurlar = new RegisterRequestDTO(
-                    "João da Silva", "  JOAO@Email.Com ", "senha123", "11999998888"
-            );
-            when(userRepository.findByEmail("joao@email.com")).thenReturn(
-                    Optional.of(User.builder().id(UUID.randomUUID()).email("joao@email.com").build())
-            );
+            RegisterRequestDTO dtoTentandoBurlar =
+                    new RegisterRequestDTO(
+                            "João da Silva", "  JOAO@Email.Com ", "senha123", "11999998888");
+            when(userRepository.findByEmail("joao@email.com"))
+                    .thenReturn(
+                            Optional.of(
+                                    User.builder()
+                                            .id(UUID.randomUUID())
+                                            .email("joao@email.com")
+                                            .build()));
 
             assertThatThrownBy(() -> userService.addUser(dtoTentandoBurlar))
                     .isInstanceOf(EmailAlreadyExistsException.class);
@@ -215,12 +228,14 @@ class UserServiceTest {
         @DisplayName("deve atualizar email e senha de um usuário existente")
         void deveAtualizarUsuarioExistente() {
             UUID id = UUID.randomUUID();
-            User existente = User.builder().id(id).email("antigo@email.com").password("HASH_ANTIGO").build();
+            User existente =
+                    User.builder().id(id).email("antigo@email.com").password("HASH_ANTIGO").build();
 
             when(userRepository.findById(id)).thenReturn(Optional.of(existente));
             when(userRepository.findByEmail("novo@email.com")).thenReturn(Optional.empty());
             when(encoder.encode("novaSenha123")).thenReturn("HASH_NOVO");
-            when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
+            when(userRepository.save(any(User.class)))
+                    .thenAnswer(invocation -> invocation.getArgument(0));
 
             User atualizado = userService.updateUser(id, "novo@email.com", "novaSenha123");
 
@@ -241,7 +256,8 @@ class UserServiceTest {
         }
 
         @Test
-        @DisplayName("deve lançar EmailAlreadyExistsException quando o novo email já pertence a outro usuário")
+        @DisplayName(
+                "deve lançar EmailAlreadyExistsException quando o novo email já pertence a outro usuário")
         void deveLancarExcecaoQuandoNovoEmailPertenceAOutroUsuario() {
             UUID idUsuarioA = UUID.randomUUID();
             UUID idUsuarioB = UUID.randomUUID();
@@ -251,7 +267,8 @@ class UserServiceTest {
             when(userRepository.findById(idUsuarioA)).thenReturn(Optional.of(usuarioA));
             when(userRepository.findByEmail("b@email.com")).thenReturn(Optional.of(usuarioB));
 
-            assertThatThrownBy(() -> userService.updateUser(idUsuarioA, "b@email.com", "outraSenha"))
+            assertThatThrownBy(
+                            () -> userService.updateUser(idUsuarioA, "b@email.com", "outraSenha"))
                     .isInstanceOf(EmailAlreadyExistsException.class);
 
             verify(userRepository, never()).save(any(User.class));
@@ -271,15 +288,18 @@ class UserServiceTest {
         }
 
         @Test
-        @DisplayName("borda: não deve lançar exceção quando o usuário atualiza o email para o mesmo email que já possui")
+        @DisplayName(
+                "borda: não deve lançar exceção quando o usuário atualiza o email para o mesmo email que já possui")
         void naoDeveLancarExcecaoAoManterOMesmoEmail() {
             UUID id = UUID.randomUUID();
-            User existente = User.builder().id(id).email("joao@email.com").password("HASH_ANTIGO").build();
+            User existente =
+                    User.builder().id(id).email("joao@email.com").password("HASH_ANTIGO").build();
 
             when(userRepository.findById(id)).thenReturn(Optional.of(existente));
             when(userRepository.findByEmail("joao@email.com")).thenReturn(Optional.of(existente));
             when(encoder.encode(anyString())).thenReturn("HASH_NOVO");
-            when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
+            when(userRepository.save(any(User.class)))
+                    .thenAnswer(invocation -> invocation.getArgument(0));
 
             User resultado = userService.updateUser(id, "joao@email.com", "novaSenha");
 
@@ -287,7 +307,8 @@ class UserServiceTest {
         }
 
         @Test
-        @DisplayName("borda: deve lançar InvalidUserException quando o email informado é apenas espaços")
+        @DisplayName(
+                "borda: deve lançar InvalidUserException quando o email informado é apenas espaços")
         void deveLancarExcecaoQuandoEmailEhApenasEspacos() {
             UUID id = UUID.randomUUID();
             User existente = User.builder().id(id).email("antigo@email.com").build();
@@ -300,7 +321,8 @@ class UserServiceTest {
         }
 
         @Test
-        @DisplayName("borda: deve normalizar o novo email (maiúsculo/espaços) antes de salvar no update")
+        @DisplayName(
+                "borda: deve normalizar o novo email (maiúsculo/espaços) antes de salvar no update")
         void deveNormalizarNovoEmailNoUpdate() {
             UUID id = UUID.randomUUID();
             User existente = User.builder().id(id).email("antigo@email.com").build();
@@ -308,7 +330,8 @@ class UserServiceTest {
             when(userRepository.findById(id)).thenReturn(Optional.of(existente));
             when(userRepository.findByEmail("novo@email.com")).thenReturn(Optional.empty());
             when(encoder.encode(anyString())).thenReturn("HASH");
-            when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
+            when(userRepository.save(any(User.class)))
+                    .thenAnswer(invocation -> invocation.getArgument(0));
 
             User resultado = userService.updateUser(id, "  NOVO@Email.com ", "senha123");
 
@@ -348,7 +371,8 @@ class UserServiceTest {
         }
 
         @Test
-        @DisplayName("borda: chamar deleteUser duas vezes seguidas para o mesmo id deve falhar na segunda vez")
+        @DisplayName(
+                "borda: chamar deleteUser duas vezes seguidas para o mesmo id deve falhar na segunda vez")
         void deletarDuasVezesDeveFalharNaSegunda() {
             UUID id = UUID.randomUUID();
             when(userRepository.existsById(id)).thenReturn(true, false);
@@ -396,7 +420,8 @@ class UserServiceTest {
         @Test
         @DisplayName("borda: getUser com id nulo propaga IllegalArgumentException do Spring Data")
         void getUserComIdNuloDeveLancarExcecao() {
-            when(userRepository.findById(null)).thenThrow(new IllegalArgumentException("The given id must not be null"));
+            when(userRepository.findById(null))
+                    .thenThrow(new IllegalArgumentException("The given id must not be null"));
 
             assertThatThrownBy(() -> userService.getUser(null))
                     .isInstanceOf(IllegalArgumentException.class);

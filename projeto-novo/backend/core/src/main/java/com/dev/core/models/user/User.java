@@ -3,6 +3,9 @@ package com.dev.core.models.user;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import java.util.Collection;
+import java.util.List;
+import java.util.UUID;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -11,10 +14,6 @@ import lombok.Setter;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
-
-import java.util.Collection;
-import java.util.List;
-import java.util.UUID;
 
 @Table(name = "users")
 @Entity
@@ -26,17 +25,14 @@ import java.util.UUID;
 public class User implements UserDetails {
 
     @Id
-    @GeneratedValue(strategy= GenerationType.UUID)
+    @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
     private String name;
 
-    @Email
-    @NotBlank
-    private String email;
+    @Email @NotBlank private String email;
 
-    @NotBlank
-    private String password;
+    @NotBlank private String password;
 
     private String phone;
 
@@ -49,16 +45,19 @@ public class User implements UserDetails {
 
         if (this.role == null) {
             authorities = List.of(new SimpleGrantedAuthority("ROLE_COMMON"));
-        } else authorities= switch (role) {
-            case CLIENTE -> List.of(new SimpleGrantedAuthority("ROLE_CLIENTE"));
-            case BARBEIRO -> List.of(new SimpleGrantedAuthority("ROLE_BARBEIRO"));
-            case ADMIN -> List.of(
-                    new SimpleGrantedAuthority("ROLE_ADMIN"),
-                    new SimpleGrantedAuthority("ROLE_COMMON"),
-                    new SimpleGrantedAuthority("ROLE_BARBEIRO"),
-                    new SimpleGrantedAuthority("ROLE_CLIENTE"));
-            case COMMON -> List.of(new SimpleGrantedAuthority("ROLE_COMMON"));
-        };
+        } else
+            authorities =
+                    switch (role) {
+                        case CLIENTE -> List.of(new SimpleGrantedAuthority("ROLE_CLIENTE"));
+                        case BARBEIRO -> List.of(new SimpleGrantedAuthority("ROLE_BARBEIRO"));
+                        case ADMIN ->
+                                List.of(
+                                        new SimpleGrantedAuthority("ROLE_ADMIN"),
+                                        new SimpleGrantedAuthority("ROLE_COMMON"),
+                                        new SimpleGrantedAuthority("ROLE_BARBEIRO"),
+                                        new SimpleGrantedAuthority("ROLE_CLIENTE"));
+                        case COMMON -> List.of(new SimpleGrantedAuthority("ROLE_COMMON"));
+                    };
 
         return authorities;
     }
