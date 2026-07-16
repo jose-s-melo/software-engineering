@@ -22,10 +22,10 @@ import org.mockito.junit.jupiter.MockitoExtension;
 /**
  * Testes unitários para UserDetailsServiceImpl.
  *
- * <p>Escopo: carregamento de UserDetails por email (username) — ponto de entrada do Spring Security
+ * Escopo: carregamento de UserDetails por email (username) — ponto de entrada do Spring Security
  * para autenticação. UserRepository é mockado.
  *
- * <p>Inclui verificação das authorities retornadas por User.getAuthorities() para cada role, pois é
+ * Inclui verificação das authorities retornadas por User.getAuthorities() para cada role, pois é
  * exatamente esse contrato que o SecurityFilter consome.
  */
 @ExtendWith(MockitoExtension.class)

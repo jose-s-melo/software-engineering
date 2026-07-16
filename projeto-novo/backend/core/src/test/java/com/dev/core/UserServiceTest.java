@@ -29,7 +29,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 /**
  * Testes unitários para UserService.
  *
- * <p>Escopo: lógica pura de cadastro/atualização/remoção de usuário. UserRepository e
+ * Escopo: lógica pura de cadastro/atualização/remoção de usuário. UserRepository e
  * PasswordEncoder são mockados.
  */
 @ExtendWith(MockitoExtension.class)

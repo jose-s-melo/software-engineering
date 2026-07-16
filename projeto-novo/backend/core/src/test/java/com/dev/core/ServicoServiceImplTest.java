@@ -29,7 +29,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 /**
  * Testes unitários para ServicoServiceImpl.
  *
- * <p>Técnica: Caixa Preta para as operações de CRUD (entradas válidas/limite de "não encontrado"),
+ * Técnica: Caixa Preta para as operações de CRUD (entradas válidas/limite de "não encontrado"),
  * Caixa Branca para create() (garante que o id é zerado antes de salvar, para impedir sobrescrita
  * acidental de um registro existente).
  */

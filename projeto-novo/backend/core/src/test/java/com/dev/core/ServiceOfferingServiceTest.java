@@ -36,7 +36,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 /**
  * Testes unitários para ServiceOfferingService.
  *
- * <p>Técnica: Tabela de Decisão para create() (barbearia existe? nome duplicado? dados válidos?) e
+ * Técnica: Tabela de Decisão para create() (barbearia existe? nome duplicado? dados válidos?) e
  * Partição de Equivalência para os campos obrigatórios (name/category/price) em validateParams.
  */
 @ExtendWith(MockitoExtension.class)

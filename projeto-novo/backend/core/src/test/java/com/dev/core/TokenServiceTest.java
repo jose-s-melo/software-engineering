@@ -18,7 +18,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 /**
  * Testes unitários para TokenService.
  *
- * <p>Escopo: geração, validação e verificação de role (isAdmin) em tokens JWT. TokenService não
+ * Escopo: geração, validação e verificação de role (isAdmin) em tokens JWT. TokenService não
  * possui dependências externas — instanciado diretamente, sem mocks. Os campos ISSUER e SECRET são
  * anotados com @Value e só são preenchidos pelo Spring dentro de um ApplicationContext; como o
  * teste instancia a classe com "new", eles são injetados manualmente via ReflectionTestUtils com os
