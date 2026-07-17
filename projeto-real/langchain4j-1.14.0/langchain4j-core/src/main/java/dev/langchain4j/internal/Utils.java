@@ -11,6 +11,7 @@ import static java.util.Collections.unmodifiableSet;
 
 import dev.langchain4j.Internal;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
@@ -326,45 +327,55 @@ public class Utils {
      * @throws RuntimeException if the request fails.
      */
     public static byte[] readBytes(String url) {
+        if (url.startsWith("http://") || url.startsWith("https://")) {
+            return readBytesFromHttp(url);
+        } else {
+            return readBytesFromFile(url);
+        }
+    }
+
+    private static byte[] readBytesFromHttp(String url) {
         try {
-            if (url.startsWith("http://") || url.startsWith("https://")) {
-                // Handle URLs
-                HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
-                connection.setRequestMethod("GET");
-                // Add headers to appear as a legitimate browser request
-                connection.setRequestProperty(
-                        "User-Agent",
-                        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36");
-                connection.setRequestProperty(
-                        "Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8");
-                connection.setRequestProperty("Accept-Language", "en-US,en;q=0.5");
-                connection.setRequestProperty("Accept-Encoding", "gzip, deflate");
-                connection.setRequestProperty("Connection", "keep-alive");
+            HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
+            connection.setRequestMethod("GET");
+            configureHttpConnection(connection);
 
-                int responseCode = connection.getResponseCode();
-
-                if (responseCode == HTTP_OK) {
-                    try (InputStream inputStream = connection.getInputStream();
-                            ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
-                        byte[] buffer = new byte[1024];
-                        int bytesRead;
-                        while ((bytesRead = inputStream.read(buffer)) != -1) {
-                            outputStream.write(buffer, 0, bytesRead);
-                        }
-
-                        return outputStream.toByteArray();
-                    } finally {
-                        connection.disconnect();
-                    }
-                } else {
-                    throw new RuntimeException("Error while reading: " + responseCode);
-                }
-            } else {
-                // Handle files
-                return Files.readAllBytes(Path.of(new URI(url)));
+            int responseCode = connection.getResponseCode();
+            if (responseCode != HTTP_OK) {
+                throw new RuntimeException("Error while reading: " + responseCode);
             }
+            return readResponse(connection);
         } catch (Exception e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    private static byte[] readBytesFromFile(String url) {
+        try {
+            return Files.readAllBytes(Path.of(new URI(url)));
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static void configureHttpConnection(HttpURLConnection connection) {
+        connection.setRequestProperty("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36");
+        connection.setRequestProperty("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8");
+        connection.setRequestProperty("Accept-Language", "en-US,en;q=0.5");
+        connection.setRequestProperty("Accept-Encoding", "gzip, deflate");
+        connection.setRequestProperty("Connection", "keep-alive");
+    }
+
+    private static byte[] readResponse(HttpURLConnection connection) throws IOException {
+        try (InputStream inputStream = connection.getInputStream(); ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
+            byte[] buffer = new byte[1024];
+            int bytesRead;
+            while ((bytesRead = inputStream.read(buffer)) != -1) {
+                outputStream.write(buffer, 0, bytesRead);
+            }
+            return outputStream.toByteArray();
+        } finally {
+            connection.disconnect();
         }
     }
 
@@ -591,9 +602,7 @@ public class Utils {
     }
 
     public static <T> List<T> merge(List<T>... lists) {
-        if (lists.length < 2) {
-            throw new IllegalArgumentException("lists must have at least 2 elements");
-        }
+        requireAtLeastTwoElements(lists, "lists");
 
         if (lists.length == 2) {
             if (lists[0] == null || lists[0].isEmpty()) {
@@ -611,9 +620,7 @@ public class Utils {
     }
 
     public static <K, V> Map<K, V> merge(Map<K, V>... maps) {
-        if (maps.length < 2) {
-            throw new IllegalArgumentException("maps must have at least 2 elements");
-        }
+        requireAtLeastTwoElements(maps, "maps");
 
         if (maps.length == 2) {
             if (maps[0] == null || maps[0].isEmpty()) {
@@ -632,6 +639,12 @@ public class Utils {
             }
         }
         return result;
+    }
+
+    private static void requireAtLeastTwoElements(Object[] array, String typeName) {
+        if (array.length < 2) {
+            throw new IllegalArgumentException(typeName + " must have at least 2 elements");
+        }
     }
 
     public static String randomString(int length) {
