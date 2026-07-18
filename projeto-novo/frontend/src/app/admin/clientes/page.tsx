@@ -28,7 +28,7 @@ export default function ClientesAdminPage() {
   const [isAppointmentsModalOpen, setIsAppointmentsModalOpen] = useState(false);
 
   const [selectedClient, setSelectedClient] = useState<Cliente | null>(null);
-  const [formData, setFormData] = useState({ clientName: '', clientPhone: '', clientEmail: '' });
+  const [formData, setFormData] = useState({ clientName: '', clientPhone: '', clientEmail: '', clientPassword: 'admin' });
 
   const carregarClientes = () => {
     setLoading(true);
@@ -45,13 +45,17 @@ export default function ClientesAdminPage() {
 
   // Filtro
   const clientesFiltrados = clientes.filter((cliente) =>
-    cliente.clientName.toLowerCase().includes(search.toLowerCase())
+    {
+        if (cliente.clientName) {
+            return cliente.clientName.toLowerCase().includes(search.toLowerCase())
+        }
+    }
   );
 
   // Abrir modal NOVO
   const handleOpenNew = () => {
     setSelectedClient(null);
-    setFormData({ clientName: '', clientPhone: '', clientEmail: '' });
+    setFormData({ clientName: '', clientPhone: '', clientEmail: '', clientPassword: 'admin' });
     setIsModalOpen(true);
   };
 
@@ -61,7 +65,8 @@ export default function ClientesAdminPage() {
     setFormData({ 
       clientName: cliente.clientName, 
       clientPhone: cliente.clientPhone, 
-      clientEmail: cliente.clientEmail 
+      clientEmail: cliente.clientEmail,
+      clientPassword: 'admin'
     });
     setIsModalOpen(true);
   };
@@ -90,7 +95,7 @@ export default function ClientesAdminPage() {
   // Salvar (Criar ou Atualizar)
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.clientName || !formData.clientPhone) return;
+    if (!formData.clientName || !formData.clientPhone || !formData.clientEmail || !formData.clientPassword) return;
 
     setSaving(true);
     try {

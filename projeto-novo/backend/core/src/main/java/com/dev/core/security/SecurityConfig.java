@@ -55,7 +55,7 @@ public class SecurityConfig {
                 .authenticationProvider(authenticationProvider())
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/login").permitAll()
-                        .requestMatchers("/api/auth/register").permitAll()
+                        .requestMatchers("/api/auth/register").hasAnyRole("ADMIN", "BARBEIRO")
                         .requestMatchers("/api/auth/changePassword").permitAll()
                         .requestMatchers("/api/auth/forgot").permitAll()
                         .requestMatchers("/api/auth/forgotConfirm").permitAll()
@@ -67,14 +67,16 @@ public class SecurityConfig {
                                 "/swagger-resources/**",
                                 "/webjars/**"
                         ).permitAll()
-                        //.requestMatchers("/api/auth/register")
-                        //    .hasAnyRole("ADMIN", "BARBEIRO")
                         .requestMatchers(HttpMethod.POST, "/api/agendamentos")
                             .hasAnyRole("ADMIN", "BARBEIRO")
                         .requestMatchers(HttpMethod.POST, "/api/atendimentos/admin")
                             .hasAnyRole("ADMIN", "BARBEIRO")
-                        //.requestMatchers("/api/servicos")
-                        //    .hasAnyRole("ADMIN", "BARBEIRO")
+                        .requestMatchers("/api/servicos")
+                            .hasAnyRole("ADMIN", "BARBEIRO")
+                        .requestMatchers("/api/sudo/**")
+                            .hasRole("ADMIN")
+                        .requestMatchers("/api/users/**")
+                            .hasAnyRole("ADMIN", "BARBEIRO")
                         .anyRequest().authenticated()
 
                 )
