@@ -1,9 +1,10 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Users, X, Search, Edit2, Trash2, Calendar } from 'lucide-react';
 import { Cliente } from "@/types/cliente";
 import ClientAppointmentsModal from "@/components/modals/ClientAppointmentsModal";
+import { getClients, createClient, updateClient, deleteClient } from "@/app/api/clients/clientService";
 
 const COLORS = {
   red: "#C8102E",
@@ -15,22 +16,32 @@ const COLORS = {
   overlay: "rgba(26, 58, 107, 0.5)",
 };
 
-const clientesMock: Cliente[] = [
-  { id: "1", clientName: "Lucas Henrique", clientPhone: "(83) 99999-9999", clientEmail: "lucas@email.com" },
-  { id: "2", clientName: "João Pedro", clientPhone: "(83) 98888-8888", clientEmail: "joao@email.com" },
-  { id: "3", clientName: "Carlos Eduardo", clientPhone: "(83) 97777-7777", clientEmail: "carlos@email.com" },
-];
-
 export default function ClientesAdminPage() {
   const [search, setSearch] = useState("");
-  const [clientes, setClientes] = useState<Cliente[]>(clientesMock);
-  
+  const [clientes, setClientes] = useState<Cliente[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+
   // Controles de Modal
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isAppointmentsModalOpen, setIsAppointmentsModalOpen] = useState(false);
-  
+
   const [selectedClient, setSelectedClient] = useState<Cliente | null>(null);
   const [formData, setFormData] = useState({ clientName: '', clientPhone: '', clientEmail: '' });
+
+  const carregarClientes = () => {
+    setLoading(true);
+    setError(null);
+    getClients()
+      .then(setClientes)
+      .catch(() => setError("Não foi possível carregar os clientes."))
+      .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    carregarClientes();
+  }, []);
 
   // Filtro
   const clientesFiltrados = clientes.filter((cliente) =>
@@ -62,33 +73,40 @@ export default function ClientesAdminPage() {
   };
 
   // Excluir
-  const handleDelete = (id: string) => {
-    if (confirm("Tem certeza que deseja excluir este cliente?")) {
-      setClientes((prev) => prev.filter((c) => c.id !== id));
+  const handleDelete = async (id: string) => {
+    if (!confirm("Tem certeza que deseja excluir este cliente?")) return;
+
+    const clientesAnteriores = clientes;
+    setClientes((prev) => prev.filter((c) => c.id !== id));
+
+    try {
+      await deleteClient(id);
+    } catch {
+      setClientes(clientesAnteriores);
+      alert("Não foi possível excluir o cliente. Tente novamente.");
     }
   };
 
   // Salvar (Criar ou Atualizar)
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.clientName || !formData.clientPhone) return;
 
-    if (selectedClient) {
-      setClientes((prev) => prev.map((c) => 
-        c.id === selectedClient.id 
-          ? { ...c, clientName: formData.clientName, clientPhone: formData.clientPhone, clientEmail: formData.clientEmail } 
-          : c
-      ));
-    } else {
-      const novoCliente: Cliente = {
-        id: String(clientes.length + 1),
-        clientName: formData.clientName,
-        clientPhone: formData.clientPhone,
-        clientEmail: formData.clientEmail,
-      };
-      setClientes([...clientes, novoCliente]);
+    setSaving(true);
+    try {
+      if (selectedClient) {
+        const atualizado = await updateClient(selectedClient.id, formData);
+        setClientes((prev) => prev.map((c) => (c.id === selectedClient.id ? atualizado : c)));
+      } else {
+        const novoCliente = await createClient(formData);
+        setClientes((prev) => [...prev, novoCliente]);
+      }
+      setIsModalOpen(false);
+    } catch {
+      alert("Não foi possível salvar o cliente. Verifique os dados e tente novamente.");
+    } finally {
+      setSaving(false);
     }
-    setIsModalOpen(false);
   };
 
   return (
@@ -139,7 +157,15 @@ export default function ClientesAdminPage() {
               </tr>
             </thead>
             <tbody>
-              {clientesFiltrados.length === 0 ? (
+              {loading ? (
+                <tr>
+                  <td colSpan={4} style={{ padding: "20px 0", textAlign: "center", color: COLORS.gray }}>Carregando clientes...</td>
+                </tr>
+              ) : error ? (
+                <tr>
+                  <td colSpan={4} style={{ padding: "20px 0", textAlign: "center", color: COLORS.red }}>{error}</td>
+                </tr>
+              ) : clientesFiltrados.length === 0 ? (
                 <tr>
                   <td colSpan={4} style={{ padding: "20px 0", textAlign: "center", color: COLORS.gray }}>Nenhum cliente encontrado.</td>
                 </tr>
@@ -219,8 +245,8 @@ export default function ClientesAdminPage() {
                 />
               </div>
 
-              <button type="submit" style={{ background: COLORS.blue, color: COLORS.white, padding: "16px", borderRadius: "10px", border: "none", fontWeight: 700, cursor: "pointer", marginTop: "8px", fontSize: "16px" }}>
-                {selectedClient ? "Salvar Alterações" : "Cadastrar Cliente"}
+              <button type="submit" disabled={saving} style={{ background: COLORS.blue, color: COLORS.white, padding: "16px", borderRadius: "10px", border: "none", fontWeight: 700, cursor: saving ? "default" : "pointer", marginTop: "8px", fontSize: "16px", opacity: saving ? 0.7 : 1 }}>
+                {saving ? "Salvando..." : selectedClient ? "Salvar Alterações" : "Cadastrar Cliente"}
               </button>
             </form>
           </div>
@@ -231,6 +257,7 @@ export default function ClientesAdminPage() {
       <ClientAppointmentsModal
         clientId={selectedClient?.id || ""}
         clientName={selectedClient?.clientName || ""}
+        clientEmail={selectedClient?.clientEmail || ""}
         isOpen={isAppointmentsModalOpen}
         onClose={() => setIsAppointmentsModalOpen(false)}
       />

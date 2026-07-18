@@ -1,5 +1,6 @@
 package com.dev.core.services;
 
+import com.dev.core.dtos.AtendimentoAdminRequestDTO;
 import com.dev.core.dtos.AtendimentoRequestDTO;
 import com.dev.core.models.Agendamento;
 import com.dev.core.models.Atendimento;
@@ -20,8 +21,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -57,8 +60,44 @@ public class AtendimentoService {
         Atendimento atendimento = Atendimento.builder()
                 .servico(servico)
                 .emailClient(user.getUsername())
+                .data(dto.data())
                 .hora(horaAtendimento)
                 .status(StatusAtendimento.CONFIRMADO) // ou PENDENTE, dependendo do seu fluxo
+                .build();
+
+        return atendimentoRepository.save(atendimento);
+    }
+
+    /**
+     * Lista todos os atendimentos cadastrados. Usado pelo painel administrativo (dashboard).
+     */
+    public List<Atendimento> listarTodos() {
+        return atendimentoRepository.findAll();
+    }
+
+    /**
+     * Lista os atendimentos de um cliente específico, pelo e-mail dele.
+     */
+    public List<Atendimento> listarPorClienteEmail(String email) {
+        return atendimentoRepository.findByEmailClient(email);
+    }
+
+    /**
+     * Permite que um administrador/barbeiro registre um atendimento manualmente
+     * (ex.: cliente que chegou sem agendamento prévio pelo app), sem depender
+     * de um horário previamente cadastrado na Agenda.
+     */
+    @Transactional
+    public Atendimento registrarAtendimentoManual(AtendimentoAdminRequestDTO dto) {
+        Servico servico = servicoRepository.findById(dto.servicoId())
+                .orElseThrow(() -> new RuntimeException("Serviço não encontrado."));
+
+        Atendimento atendimento = Atendimento.builder()
+                .servico(servico)
+                .emailClient(dto.emailClient())
+                .data(dto.data())
+                .hora(dto.hora())
+                .status(dto.status() != null ? dto.status() : StatusAtendimento.CONFIRMADO)
                 .build();
 
         return atendimentoRepository.save(atendimento);

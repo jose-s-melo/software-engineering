@@ -1,54 +1,66 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Modal from "@/components/ui/Modal";
 import TableContainer from "@/components/ui/TableContainer";
 import Button from "@/components/ui/Button";
+import { getAtendimentosPorCliente, Atendimento, StatusAtendimento } from "@/app/api/atendimentos/atendimentoService";
 
 type ClientAppointmentsModalProps = {
     clientId: string;
     clientName: string;
+    clientEmail: string;
     isOpen: boolean;
     onClose: () => void;
 }
 
-type Appointment = {
-  id: string;
-  serviceName: string;
-  date: string;
-  hour: string;
-  status: string;
-  clientId: string;
+const STATUS_LABELS: Record<StatusAtendimento, string> = {
+    CONFIRMADO: "Confirmado",
+    PENDENTE: "Pendente",
+    CANCELADO: "Cancelado",
+    AGENDADO: "Agendado",
 };
 
-const appointmentsMock: Appointment[] = [
-    {
-        id: "1",
-        serviceName: "Corte Clássico",
-        date: "28/05/2026",
-        hour: "14:00",
-        status: "Confirmado",
-        clientId: "1",
-    },
-    {
-        id: "2",
-        serviceName: "Barba Tradicional",
-        date: "03/06/2026",
-        hour: "16:30",
-        status: "Pendente",
-        clientId: "2",
-    },
-];
+function formatDate(iso: string | null) {
+    if (!iso) return "-";
+    const [year, month, day] = iso.split("-");
+    return `${day}/${month}/${year}`;
+}
 
 export default function ClientAppointmentsModal({
     clientId,
     clientName,
+    clientEmail,
     isOpen,
     onClose
 
 }: ClientAppointmentsModalProps) {
-    const clientAppointments = appointmentsMock.filter(
-        (appointment) => appointment.clientId === clientId
-    )
+    const [clientAppointments, setClientAppointments] = useState<Atendimento[]>([]);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        if (!isOpen || !clientEmail) return;
+
+        let ativo = true;
+        setLoading(true);
+        setError(null);
+
+        getAtendimentosPorCliente(clientEmail)
+            .then((data) => {
+                if (ativo) setClientAppointments(data);
+            })
+            .catch(() => {
+                if (ativo) setError("Não foi possível carregar os agendamentos deste cliente.");
+            })
+            .finally(() => {
+                if (ativo) setLoading(false);
+            });
+
+        return () => {
+            ativo = false;
+        };
+    }, [isOpen, clientEmail]);
 
     return (
         <Modal 
@@ -88,43 +100,65 @@ export default function ClientAppointmentsModal({
                 </thead>
 
                 <tbody>
-                {clientAppointments.map((appointment) => (
-                    <tr
-                    key={appointment.id}
-                    className="border-t-2 border-[#E5E3DF]"
-                    >
-                    <td className="p-5 font-semibold">
-                        {appointment.serviceName}
-                    </td>
-
-                    <td className="p-5">
-                        {appointment.date}
-                    </td>
-
-                    <td className="p-5">
-                        {appointment.hour}
-                    </td>
-
-                    <td className="p-5">
-                        <span
-                        className={`
-                            px-3 py-2
-                            text-xs
-                            font-black
-                            uppercase
-                            border-2
-                            ${
-                            appointment.status === "Confirmado"
-                                ? "bg-green-100 border-green-700 text-green-700"
-                                : "bg-yellow-100 border-yellow-700 text-yellow-700"
-                            }
-                        `}
-                        >
-                        {appointment.status}
-                        </span>
-                    </td>
+                {loading ? (
+                    <tr>
+                        <td colSpan={4} className="p-5 text-center text-[#6B6B6B]">
+                            Carregando agendamentos...
+                        </td>
                     </tr>
-                ))}
+                ) : error ? (
+                    <tr>
+                        <td colSpan={4} className="p-5 text-center text-red-700">
+                            {error}
+                        </td>
+                    </tr>
+                ) : clientAppointments.length === 0 ? (
+                    <tr>
+                        <td colSpan={4} className="p-5 text-center text-[#6B6B6B]">
+                            Nenhum agendamento encontrado para este cliente.
+                        </td>
+                    </tr>
+                ) : (
+                    clientAppointments.map((appointment) => (
+                        <tr
+                        key={appointment.id}
+                        className="border-t-2 border-[#E5E3DF]"
+                        >
+                        <td className="p-5 font-semibold">
+                            {appointment.nomeServico}
+                        </td>
+
+                        <td className="p-5">
+                            {formatDate(appointment.data)}
+                        </td>
+
+                        <td className="p-5">
+                            {appointment.hora}
+                        </td>
+
+                        <td className="p-5">
+                            <span
+                            className={`
+                                px-3 py-2
+                                text-xs
+                                font-black
+                                uppercase
+                                border-2
+                                ${
+                                appointment.status === "CONFIRMADO"
+                                    ? "bg-green-100 border-green-700 text-green-700"
+                                    : appointment.status === "CANCELADO"
+                                    ? "bg-red-100 border-red-700 text-red-700"
+                                    : "bg-yellow-100 border-yellow-700 text-yellow-700"
+                                }
+                            `}
+                            >
+                            {STATUS_LABELS[appointment.status]}
+                            </span>
+                        </td>
+                        </tr>
+                    ))
+                )}
                 </tbody>
             </table>
             </TableContainer>

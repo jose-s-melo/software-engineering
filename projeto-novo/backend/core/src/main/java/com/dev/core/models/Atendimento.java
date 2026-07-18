@@ -38,6 +38,8 @@ public class Atendimento {
 
     private String emailClient;
 
+    private LocalDate data;
+
     @Column(nullable = false)
     private String hora;
 

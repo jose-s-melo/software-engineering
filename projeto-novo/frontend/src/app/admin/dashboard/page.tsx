@@ -1,7 +1,12 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Users, Calendar, DollarSign, Clock, Scissors, X } from 'lucide-react';
+import { getAtendimentos, criarAtendimentoAdmin, Atendimento, StatusAtendimento } from '@/app/api/atendimentos/atendimentoService';
+import { getClients } from '@/app/api/clients/clientService';
+import { getServicos } from '@/app/api/servicos/servicoService';
+import { Cliente } from '@/types/cliente';
+import { Servico } from '@/types/servico';
 
 const COLORS = {
   red: "#C8102E",
@@ -13,31 +18,96 @@ const COLORS = {
   overlay: "rgba(26, 58, 107, 0.5)", // Fundo escuro para o modal
 };
 
+const STATUS_LABELS: Record<StatusAtendimento, string> = {
+  CONFIRMADO: "Confirmado",
+  PENDENTE: "Pendente",
+  CANCELADO: "Cancelado",
+  AGENDADO: "Agendado",
+};
+
+function hojeISO() {
+  const agora = new Date();
+  const ano = agora.getFullYear();
+  const mes = String(agora.getMonth() + 1).padStart(2, "0");
+  const dia = String(agora.getDate()).padStart(2, "0");
+  return `${ano}-${mes}-${dia}`;
+}
+
 export default function AdminDashboard() {
-  // 1. Estado para guardar a lista de agendamentos
-  const [appointments, setAppointments] = useState([
-    { id: 1, name: "João Silva", service: "Corte + Barba", time: "14:30", status: "Confirmado" },
-    { id: 2, name: "Apolo Husky", service: "Barba Tradicional", time: "15:15", status: "Pendente" }
-  ]);
+  const [appointments, setAppointments] = useState<Atendimento[]>([]);
+  const [clientes, setClientes] = useState<Cliente[]>([]);
+  const [servicos, setServicos] = useState<Servico[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // 2. Estados para controlar o Modal e o formulário
+  // Estados para controlar o Modal e o formulário
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [formData, setFormData] = useState({ name: '', service: '', time: '', status: 'Confirmado' });
+  const [saving, setSaving] = useState(false);
+  const [formData, setFormData] = useState({ clientEmail: '', servicoId: '', time: '', status: 'CONFIRMADO' as StatusAtendimento });
 
-  // 3. Função para salvar o novo agendamento
-  const handleAddAppointment = (e: React.FormEvent) => {
+  const carregarDados = () => {
+    setLoading(true);
+    setError(null);
+    Promise.all([getAtendimentos(), getClients(), getServicos()])
+      .then(([atendimentosData, clientesData, servicosData]) => {
+        setAppointments(atendimentosData);
+        setClientes(clientesData);
+        setServicos(servicosData);
+      })
+      .catch(() => setError("Não foi possível carregar os dados do painel."))
+      .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    carregarDados();
+  }, []);
+
+  const clientesPorEmail = useMemo(() => {
+    const mapa = new Map<string, Cliente>();
+    clientes.forEach((c) => mapa.set(c.clientEmail.toLowerCase(), c));
+    return mapa;
+  }, [clientes]);
+
+  const agendamentosDeHoje = useMemo(() => {
+    const hoje = hojeISO();
+    return appointments
+      .filter((a) => a.data === hoje)
+      .sort((a, b) => a.hora.localeCompare(b.hora));
+  }, [appointments]);
+
+  const faturamentoPrevisto = useMemo(() => {
+    return agendamentosDeHoje
+      .filter((a) => a.status !== "CANCELADO")
+      .reduce((total, a) => total + Number(a.precoServico || 0), 0);
+  }, [agendamentosDeHoje]);
+
+  const nomeCliente = (emailClient: string) => {
+    return clientesPorEmail.get(emailClient.toLowerCase())?.clientName || emailClient;
+  };
+
+  const handleAddAppointment = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!formData.name || !formData.time || !formData.service) return;
 
-    const newAppointment = {
-      id: appointments.length + 1,
-      ...formData
-    };
+    if (!formData.clientEmail || !formData.servicoId || !formData.time) return;
 
-    setAppointments([...appointments, newAppointment]);
-    setIsModalOpen(false); // Fecha o modal
-    setFormData({ name: '', service: '', time: '', status: 'Confirmado' }); // Limpa o form
+    setSaving(true);
+    try {
+      const novoAtendimento = await criarAtendimentoAdmin({
+        emailClient: formData.clientEmail,
+        servicoId: formData.servicoId,
+        data: hojeISO(),
+        hora: formData.time,
+        status: formData.status,
+      });
+
+      setAppointments((prev) => [...prev, novoAtendimento]);
+      setIsModalOpen(false);
+      setFormData({ clientEmail: '', servicoId: '', time: '', status: 'CONFIRMADO' });
+    } catch {
+      alert("Não foi possível salvar o agendamento. Verifique os dados e tente novamente.");
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -63,12 +133,18 @@ export default function AdminDashboard() {
           </button>
         </header>
 
-        {/* Métricas dinâmicas baseadas no estado */}
+        {error && (
+          <div style={{ background: "#FDEDEC", color: COLORS.red, padding: "16px 20px", borderRadius: "12px", marginBottom: "24px", fontWeight: 600 }}>
+            {error}
+          </div>
+        )}
+
+        {/* Métricas dinâmicas baseadas nos dados reais */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "20px", marginBottom: "40px" }}>
-          <MetricCard title="Faturamento Previsto" value={`R$ ${appointments.length * 60},00`} icon={<DollarSign />} />
-          <MetricCard title="Agendamentos" value={appointments.length.toString()} icon={<Calendar />} />
-          <MetricCard title="Clientes" value={appointments.length.toString()} icon={<Users />} />
-          <MetricCard title="Disponibilidade" value={(10 - appointments.length).toString()} icon={<Clock />} />
+          <MetricCard title="Faturamento Previsto" value={`R$ ${faturamentoPrevisto.toFixed(2).replace('.', ',')}`} icon={<DollarSign />} />
+          <MetricCard title="Agendamentos Hoje" value={agendamentosDeHoje.length.toString()} icon={<Calendar />} />
+          <MetricCard title="Clientes" value={clientes.length.toString()} icon={<Users />} />
+          <MetricCard title="Disponibilidade" value={Math.max(0, 10 - agendamentosDeHoje.length).toString()} icon={<Clock />} />
         </div>
 
         {/* Tabela */}
@@ -84,13 +160,23 @@ export default function AdminDashboard() {
               </tr>
             </thead>
             <tbody>
-              {appointments.length === 0 ? (
+              {loading ? (
+                <tr>
+                  <td colSpan={4} style={{ padding: "20px 0", textAlign: "center", color: COLORS.gray }}>Carregando agendamentos...</td>
+                </tr>
+              ) : agendamentosDeHoje.length === 0 ? (
                 <tr>
                   <td colSpan={4} style={{ padding: "20px 0", textAlign: "center", color: COLORS.gray }}>Nenhum agendamento para hoje.</td>
                 </tr>
               ) : (
-                appointments.map((appt) => (
-                  <Row key={appt.id} name={appt.name} service={appt.service} time={appt.time} status={appt.status} />
+                agendamentosDeHoje.map((appt) => (
+                  <Row
+                    key={appt.id}
+                    name={nomeCliente(appt.emailClient)}
+                    service={appt.nomeServico}
+                    time={appt.hora}
+                    status={STATUS_LABELS[appt.status]}
+                  />
                 ))
               )}
             </tbody>
@@ -112,30 +198,32 @@ export default function AdminDashboard() {
             <form onSubmit={handleAddAppointment} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
               
               <div>
-                <label style={{ display: "block", fontSize: "12px", fontWeight: 700, color: COLORS.gray, marginBottom: "8px", textTransform: "uppercase" }}>Nome do Cliente</label>
-                <input 
-                  type="text" 
+                <label style={{ display: "block", fontSize: "12px", fontWeight: 700, color: COLORS.gray, marginBottom: "8px", textTransform: "uppercase" }}>Cliente</label>
+                <select
                   required
-                  value={formData.name}
-                  onChange={(e) => setFormData({...formData, name: e.target.value})}
-                  style={{ width: "100%", padding: "12px", borderRadius: "8px", border: `1px solid ${COLORS.grayLight}`, boxSizing: "border-box", fontFamily: "inherit" }}
-                  placeholder="Ex: Carlos Silva"
-                />
+                  value={formData.clientEmail}
+                  onChange={(e) => setFormData({...formData, clientEmail: e.target.value})}
+                  style={{ width: "100%", padding: "12px", borderRadius: "8px", border: `1px solid ${COLORS.grayLight}`, boxSizing: "border-box", fontFamily: "inherit", backgroundColor: COLORS.white }}
+                >
+                  <option value="" disabled>Selecione um cliente</option>
+                  {clientes.map((c) => (
+                    <option key={c.id} value={c.clientEmail}>{c.clientName}</option>
+                  ))}
+                </select>
               </div>
 
               <div>
                 <label style={{ display: "block", fontSize: "12px", fontWeight: 700, color: COLORS.gray, marginBottom: "8px", textTransform: "uppercase" }}>Serviço</label>
                 <select 
                   required
-                  value={formData.service}
-                  onChange={(e) => setFormData({...formData, service: e.target.value})}
+                  value={formData.servicoId}
+                  onChange={(e) => setFormData({...formData, servicoId: e.target.value})}
                   style={{ width: "100%", padding: "12px", borderRadius: "8px", border: `1px solid ${COLORS.grayLight}`, boxSizing: "border-box", fontFamily: "inherit", backgroundColor: COLORS.white }}
                 >
                   <option value="" disabled>Selecione um serviço</option>
-                  <option value="Corte Clássico">Corte Clássico</option>
-                  <option value="Barba Tradicional">Barba Tradicional</option>
-                  <option value="Corte + Barba">Corte + Barba</option>
-                  <option value="Pigmentação">Pigmentação</option>
+                  {servicos.map((s) => (
+                    <option key={s.id} value={s.id}>{s.serviceName}</option>
+                  ))}
                 </select>
               </div>
 
@@ -154,17 +242,17 @@ export default function AdminDashboard() {
                   <label style={{ display: "block", fontSize: "12px", fontWeight: 700, color: COLORS.gray, marginBottom: "8px", textTransform: "uppercase" }}>Status</label>
                   <select 
                     value={formData.status}
-                    onChange={(e) => setFormData({...formData, status: e.target.value})}
+                    onChange={(e) => setFormData({...formData, status: e.target.value as StatusAtendimento})}
                     style={{ width: "100%", padding: "12px", borderRadius: "8px", border: `1px solid ${COLORS.grayLight}`, boxSizing: "border-box", fontFamily: "inherit", backgroundColor: COLORS.white }}
                   >
-                    <option value="Confirmado">Confirmado</option>
-                    <option value="Pendente">Pendente</option>
+                    <option value="CONFIRMADO">Confirmado</option>
+                    <option value="PENDENTE">Pendente</option>
                   </select>
                 </div>
               </div>
 
-              <button type="submit" style={{ background: COLORS.blue, color: COLORS.white, padding: "16px", borderRadius: "10px", border: "none", fontWeight: 700, cursor: "pointer", marginTop: "8px", fontSize: "16px" }}>
-                Salvar Agendamento
+              <button type="submit" disabled={saving} style={{ background: COLORS.blue, color: COLORS.white, padding: "16px", borderRadius: "10px", border: "none", fontWeight: 700, cursor: saving ? "default" : "pointer", marginTop: "8px", fontSize: "16px", opacity: saving ? 0.7 : 1 }}>
+                {saving ? "Salvando..." : "Salvar Agendamento"}
               </button>
             </form>
 
