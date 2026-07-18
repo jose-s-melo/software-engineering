@@ -37,6 +37,7 @@ import java.util.stream.Collectors;
 public class JsonSchemaElementUtils {
 
     private static final String DEFAULT_UUID_DESCRIPTION = "String in a UUID format";
+    private static final String DEFINITIONS_REF = "$defs";
 
     public static JsonSchemaElement jsonSchemaElementFrom(Class<?> clazz) {
         return jsonSchemaElementFrom(clazz, clazz, null, false, new LinkedHashMap<>());
@@ -48,54 +49,100 @@ public class JsonSchemaElementUtils {
             String fieldDescription,
             boolean areSubFieldsRequiredByDefault,
             Map<Class<?>, VisitedClassMetadata> visited) {
-        if (isJsonString(clazz)) {
-            return JsonStringSchema.builder()
-                    .description(Optional.ofNullable(fieldDescription).orElse(descriptionFrom(clazz)))
-                    .build();
-        }
+        SchemaGenerationContext ctx = new SchemaGenerationContext(clazz, type, fieldDescription, areSubFieldsRequiredByDefault, visited);
+        return createSchemaElement(ctx);
+    }
 
-        if (isJsonInteger(clazz)) {
-            return JsonIntegerSchema.builder().description(fieldDescription).build();
+    private static JsonSchemaElement createSchemaElement(SchemaGenerationContext ctx) {
+        Class<?> clazz = ctx.clazz;
+        if (isStringType(clazz)) {
+            return createStringSchema(ctx);
         }
-
-        if (isJsonNumber(clazz)) {
-            return JsonNumberSchema.builder().description(fieldDescription).build();
+        if (isIntegerType(clazz)) {
+            return createIntegerSchema(ctx);
         }
-
-        if (isJsonBoolean(clazz)) {
-            return JsonBooleanSchema.builder().description(fieldDescription).build();
+        if (isNumberType(clazz)) {
+            return createNumberSchema(ctx);
         }
-
+        if (isBooleanType(clazz)) {
+            return createBooleanSchema(ctx);
+        }
         if (clazz.isEnum()) {
-            return JsonEnumSchema.builder()
-                    .enumValues(stream(clazz.getEnumConstants())
-                            .map(e -> ((Enum<?>) e).name())
-                            .toList())
-                    .description(Optional.ofNullable(fieldDescription).orElse(descriptionFrom(clazz)))
-                    .build();
+            return createEnumSchema(ctx);
         }
-
         if (clazz.isArray()) {
-            return JsonArraySchema.builder()
-                    .items(jsonSchemaElementFrom(
-                            clazz.getComponentType(), null, null, areSubFieldsRequiredByDefault, visited))
-                    .description(fieldDescription)
-                    .build();
+            return createArraySchemaFromComponent(ctx);
         }
-
         if (Collection.class.isAssignableFrom(clazz)) {
-            return JsonArraySchema.builder()
-                    .items(jsonSchemaElementFrom(
-                            getActualType(type), null, null, areSubFieldsRequiredByDefault, visited))
-                    .description(fieldDescription)
-                    .build();
+            return createArraySchemaFromCollection(ctx);
         }
-
         if (isPolymorphic(clazz)) {
-            return polymorphicSchemaFrom(clazz, fieldDescription, areSubFieldsRequiredByDefault, visited);
+            return polymorphicSchemaFrom(ctx);
         }
+        return jsonObjectOrReferenceSchemaFrom(ctx, false);
+    }
 
-        return jsonObjectOrReferenceSchemaFrom(clazz, fieldDescription, areSubFieldsRequiredByDefault, visited, false);
+    private static boolean isStringType(Class<?> type) {
+        return isJsonString(type);
+    }
+
+    private static boolean isIntegerType(Class<?> type) {
+        return isJsonInteger(type);
+    }
+
+    private static boolean isNumberType(Class<?> type) {
+        return isJsonNumber(type);
+    }
+
+    private static boolean isBooleanType(Class<?> type) {
+        return isJsonBoolean(type);
+    }
+
+    private static JsonStringSchema createStringSchema(SchemaGenerationContext ctx) {
+        return JsonStringSchema.builder()
+                .description(Optional.ofNullable(ctx.fieldDescription)
+                        .orElse(descriptionFrom(ctx.clazz)))
+                .build();
+    }
+
+    private static JsonIntegerSchema createIntegerSchema(SchemaGenerationContext ctx) {
+        return JsonIntegerSchema.builder().description(ctx.fieldDescription).build();
+    }
+
+    private static JsonNumberSchema createNumberSchema(SchemaGenerationContext ctx) {
+        return JsonNumberSchema.builder().description(ctx.fieldDescription).build();
+    }
+
+    private static JsonBooleanSchema createBooleanSchema(SchemaGenerationContext ctx) {
+        return JsonBooleanSchema.builder().description(ctx.fieldDescription).build();
+    }
+
+    private static JsonEnumSchema createEnumSchema(SchemaGenerationContext ctx) {
+        return JsonEnumSchema.builder()
+                .enumValues(stream(ctx.clazz.getEnumConstants())
+                        .map(e -> ((Enum<?>) e).name())
+                        .toList())
+                .description(Optional.ofNullable(ctx.fieldDescription)
+                        .orElse(descriptionFrom(ctx.clazz)))
+                .build();
+    }
+
+    private static JsonArraySchema createArraySchemaFromComponent(SchemaGenerationContext ctx) {
+        return JsonArraySchema.builder()
+                .items(jsonSchemaElementFrom(
+                        ctx.clazz.getComponentType(), null, null,
+                        ctx.areSubFieldsRequiredByDefault, ctx.visited))
+                .description(ctx.fieldDescription)
+                .build();
+    }
+
+    private static JsonArraySchema createArraySchemaFromCollection(SchemaGenerationContext ctx) {
+        return JsonArraySchema.builder()
+                .items(jsonSchemaElementFrom(
+                        getActualType(ctx.type), null, null,
+                        ctx.areSubFieldsRequiredByDefault, ctx.visited))
+                .description(ctx.fieldDescription)
+                .build();
     }
 
     public static JsonSchemaElement polymorphicSchemaFrom(
@@ -103,35 +150,37 @@ public class JsonSchemaElementUtils {
             String description,
             boolean areSubFieldsRequiredByDefault,
             Map<Class<?>, VisitedClassMetadata> visited) {
+        SchemaGenerationContext ctx = new SchemaGenerationContext(
+                baseType, null, description, areSubFieldsRequiredByDefault, visited);
+        return polymorphicSchemaFrom(ctx);
+    }
+
+    private static JsonSchemaElement polymorphicSchemaFrom(SchemaGenerationContext ctx) {
+        Class<?> baseType = ctx.clazz;
         verifyJsonTypeInfoIsSupported(baseType);
 
-        if (visited.containsKey(baseType)) {
-            VisitedClassMetadata metadata = visited.get(baseType);
-            metadata.recursionDetected = true;
+        VisitedClassMetadata metadata = registerVisitedClass(baseType, ctx.visited);
+        if (metadata != null && metadata.recursionDetected) {
             return JsonReferenceSchema.builder().reference(metadata.reference).build();
         }
-
-        String reference = generateUUIDFrom(baseType.getName());
-        VisitedClassMetadata metadata =
-                new VisitedClassMetadata(JsonReferenceSchema.builder().reference(reference).build(), reference, false);
-        visited.put(baseType, metadata);
 
         String discriminatorProperty = discriminatorPropertyName(baseType);
         List<JsonSchemaElement> options = new ArrayList<>();
         for (Class<?> subtype : findConcreteSubtypes(baseType)) {
             JsonSchemaElement subtypeSchema = jsonObjectOrReferenceSchemaFrom(
-                    subtype, null, areSubFieldsRequiredByDefault, visited, false);
+                    subtype, null, ctx.areSubFieldsRequiredByDefault, ctx.visited, false);
             JsonSchemaElement withDiscriminator =
                     addDiscriminator(subtypeSchema, baseType, subtype, discriminatorProperty);
             options.add(withDiscriminator);
-            // Refresh the cached entry so any recursive $ref to this subtype keeps the discriminator.
-            VisitedClassMetadata subtypeMetadata = visited.get(subtype);
+            
+            VisitedClassMetadata subtypeMetadata = ctx.visited.get(subtype);
             if (subtypeMetadata != null) {
                 subtypeMetadata.jsonSchemaElement = withDiscriminator;
             }
         }
-        String desc = description != null ? description : Optional.ofNullable(descriptionFrom(baseType))
-                .orElse(baseType.getSimpleName());
+
+        String desc = ctx.fieldDescription != null ? ctx.fieldDescription :
+                Optional.ofNullable(descriptionFrom(baseType)).orElse(baseType.getSimpleName());
         JsonAnyOfSchema anyOf = JsonAnyOfSchema.builder().description(desc).anyOf(options).build();
         metadata.jsonSchemaElement = anyOf;
         return anyOf;
@@ -139,13 +188,13 @@ public class JsonSchemaElementUtils {
 
     private static JsonSchemaElement addDiscriminator(
             JsonSchemaElement subtypeSchema, Class<?> baseType, Class<?> subtype, String discriminatorProperty) {
+
         if (!(subtypeSchema instanceof JsonObjectSchema obj)) {
             return subtypeSchema;
         }
 
         String discriminatorValue = discriminatorValue(baseType, subtype);
 
-        // Idempotency: a recursive call may have already augmented this subtype.
         if (obj.properties().get(discriminatorProperty) instanceof JsonEnumSchema existing
                 && existing.enumValues() != null
                 && existing.enumValues().size() == 1
@@ -153,29 +202,11 @@ public class JsonSchemaElementUtils {
             return obj;
         }
 
-        if (obj.properties().containsKey(discriminatorProperty)) {
-            JsonTypeInfo info = baseType.getAnnotation(JsonTypeInfo.class);
-            // The discriminator field is allowed to coexist with a same-named bean field only when
-            // @JsonTypeInfo(visible=true) or @JsonTypeInfo(include=As.EXISTING_PROPERTY).
-            boolean allowed = info != null
-                    && (info.visible() || info.include() == JsonTypeInfo.As.EXISTING_PROPERTY);
-            if (!allowed) {
-                throw new IllegalArgumentException(String.format(
-                        "Polymorphic subtype %s declares a field named '%s', which collides with the discriminator "
-                                + "property used for %s. Either rename the field, specify a different discriminator "
-                                + "name with @JsonTypeInfo(property = \"...\") on %s, set @JsonTypeInfo(visible = true), "
-                                + "or use @JsonTypeInfo(include = As.EXISTING_PROPERTY) if the field is intentionally "
-                                + "part of the subtype.",
-                        subtype.getName(),
-                        discriminatorProperty,
-                        baseType.getName(),
-                        baseType.getName()));
-            }
-        }
+        validateDiscriminatorCollision(obj, baseType, subtype, discriminatorProperty);
 
         Map<String, JsonSchemaElement> properties = new LinkedHashMap<>();
-        properties.put(
-                discriminatorProperty, JsonEnumSchema.builder().enumValues(discriminatorValue).build());
+        properties.put(discriminatorProperty,
+                JsonEnumSchema.builder().enumValues(discriminatorValue).build());
         obj.properties().forEach(properties::putIfAbsent);
 
         List<String> required = new ArrayList<>();
@@ -190,6 +221,24 @@ public class JsonSchemaElementUtils {
                 .required(required)
                 .additionalProperties(obj.additionalProperties())
                 .build();
+    }
+
+    private static void validateDiscriminatorCollision(JsonObjectSchema obj, Class<?> baseType,
+                                                    Class<?> subtype, String discriminatorProperty) {
+        if (obj.properties().containsKey(discriminatorProperty)) {
+            JsonTypeInfo info = baseType.getAnnotation(JsonTypeInfo.class);
+            boolean allowed = info != null &&
+                    (info.visible() || info.include() == JsonTypeInfo.As.EXISTING_PROPERTY);
+            if (!allowed) {
+                throw new IllegalArgumentException(String.format(
+                        "Polymorphic subtype %s declares a field named '%s', which collides with the discriminator " +
+                        "property used for %s. Either rename the field, specify a different discriminator " +
+                        "name with @JsonTypeInfo(property = \"...\") on %s, set @JsonTypeInfo(visible = true), " +
+                        "or use @JsonTypeInfo(include = As.EXISTING_PROPERTY) if the field is intentionally " +
+                        "part of the subtype.",
+                        subtype.getName(), discriminatorProperty, baseType.getName(), baseType.getName()));
+            }
+        }
     }
 
     /**
@@ -234,63 +283,94 @@ public class JsonSchemaElementUtils {
             boolean areSubFieldsRequiredByDefault,
             Map<Class<?>, VisitedClassMetadata> visited,
             boolean setDefinitions) {
+        SchemaGenerationContext ctx = new SchemaGenerationContext(
+                type, null, description, areSubFieldsRequiredByDefault, visited);
+        return jsonObjectOrReferenceSchemaFrom(ctx, setDefinitions);
+    }
+
+    private static JsonSchemaElement jsonObjectOrReferenceSchemaFrom(SchemaGenerationContext ctx, boolean setDefinitions) {
+        Class<?> type = ctx.clazz;
+        Map<Class<?>, VisitedClassMetadata> visited = ctx.visited;
+
         if (visited.containsKey(type) && isCustomClass(type)) {
-            VisitedClassMetadata visitedClassMetadata = visited.get(type);
-            JsonSchemaElement jsonSchemaElement = visitedClassMetadata.jsonSchemaElement;
-            if (jsonSchemaElement instanceof JsonReferenceSchema) {
-                visitedClassMetadata.recursionDetected = true;
+            VisitedClassMetadata meta = visited.get(type);
+            JsonSchemaElement existing = meta.jsonSchemaElement;
+            if (existing instanceof JsonReferenceSchema) {
+                meta.recursionDetected = true;
             }
-            if (jsonSchemaElement instanceof JsonObjectSchema obj) {
-                if (Objects.equals(description, obj.description())) {
+            if (existing instanceof JsonObjectSchema obj) {
+                if (Objects.equals(ctx.fieldDescription, obj.description())) {
                     return obj;
                 }
-                return obj.toBuilder().description(description).build();
+                return obj.toBuilder().description(ctx.fieldDescription).build();
             }
-
-            return jsonSchemaElement;
+            return existing;
         }
 
-        String reference = generateUUIDFrom(type.getName());
-        JsonReferenceSchema jsonReferenceSchema =
-                JsonReferenceSchema.builder().reference(reference).build();
-        visited.put(type, new VisitedClassMetadata(jsonReferenceSchema, reference, false));
+        VisitedClassMetadata meta = registerVisitedClass(type, visited);
+        String reference = meta.reference;
 
         Map<String, JsonSchemaElement> properties = new LinkedHashMap<>();
         List<String> required = new ArrayList<>();
         for (Field field : type.getDeclaredFields()) {
-            String fieldName = field.getName();
-            if (isStatic(field.getModifiers()) || fieldName.equals("__$hits$__") || fieldName.startsWith("this$")) {
+            if (isStatic(field.getModifiers()) || field.getName().equals("__$hits$__") || field.getName().startsWith("this$")) {
                 continue;
             }
-            if (isRequired(field, areSubFieldsRequiredByDefault)) {
+            String fieldName = field.getName();
+            if (isRequired(field, ctx.areSubFieldsRequiredByDefault)) {
                 required.add(fieldName);
             }
             String fieldDescription = descriptionFrom(field);
-            JsonSchemaElement jsonSchemaElement = jsonSchemaElementFrom(
-                    field.getType(), field.getGenericType(), fieldDescription, areSubFieldsRequiredByDefault, visited);
-            properties.put(fieldName, jsonSchemaElement);
+            JsonSchemaElement element = jsonSchemaElementFrom(
+                    field.getType(), field.getGenericType(), fieldDescription,
+                    ctx.areSubFieldsRequiredByDefault, visited);
+            properties.put(fieldName, element);
         }
 
         JsonObjectSchema.Builder builder = JsonObjectSchema.builder()
-                .description(Optional.ofNullable(description).orElse(descriptionFrom(type)))
+                .description(Optional.ofNullable(ctx.fieldDescription).orElse(descriptionFrom(type)))
                 .addProperties(properties)
                 .required(required);
 
-        visited.get(type).jsonSchemaElement = builder.build();
+        meta.jsonSchemaElement = builder.build();
 
         if (setDefinitions) {
-            Map<String, JsonSchemaElement> definitions = new LinkedHashMap<>();
-            visited.forEach((clazz, visitedClassMetadata) -> {
-                if (visitedClassMetadata.recursionDetected) {
-                    definitions.put(visitedClassMetadata.reference, visitedClassMetadata.jsonSchemaElement);
-                }
-            });
-            if (!definitions.isEmpty()) {
-                builder.definitions(definitions);
-            }
+            addDefinitionsIfNeeded(visited, builder);
         }
 
         return builder.build();
+    }
+
+    private static VisitedClassMetadata registerVisitedClass(Class<?> clazz, Map<Class<?>, VisitedClassMetadata> visited) {
+        if (visited.containsKey(clazz)) {
+            VisitedClassMetadata meta = visited.get(clazz);
+            meta.recursionDetected = true;
+            return meta;
+        }
+        String reference = generateUUIDFrom(clazz.getName());
+        JsonReferenceSchema refSchema = JsonReferenceSchema.builder().reference(reference).build();
+        VisitedClassMetadata meta = new VisitedClassMetadata(refSchema, reference, false);
+        visited.put(clazz, meta);
+        return meta;
+    }
+
+    private static void addDefinitionsIfNeeded(Map<Class<?>, VisitedClassMetadata> visited,
+                                            JsonObjectSchema.Builder builder) {
+        Map<String, JsonSchemaElement> definitions = new LinkedHashMap<>();
+        visited.forEach((clazz, meta) -> {
+            if (meta.recursionDetected) {
+                definitions.put(meta.reference, meta.jsonSchemaElement);
+            }
+        });
+        if (!definitions.isEmpty()) {
+            builder.definitions(definitions);
+        }
+    }
+
+    private static void putDescriptionIfPresent(Map<String, Object> map, String description) {
+        if (description != null) {
+            map.put("description", description);
+        }
     }
 
     private static boolean isRequired(Field field, boolean defaultValue) {
@@ -369,122 +449,132 @@ public class JsonSchemaElementUtils {
 
     public static Map<String, Object> toMap(
             JsonSchemaElement jsonSchemaElement, boolean strict, boolean required, String enumType) {
-        if (jsonSchemaElement instanceof JsonObjectSchema jsonObjectSchema) {
-            Map<String, Object> map = new LinkedHashMap<>();
-            map.put("type", type("object", strict, required));
-
-            if (jsonObjectSchema.description() != null) {
-                map.put("description", jsonObjectSchema.description());
-            }
-
-            Map<String, Map<String, Object>> properties = new LinkedHashMap<>();
-            jsonObjectSchema
-                    .properties()
-                    .forEach((property, value) -> properties.put(
-                            property,
-                            toMap(value, strict, jsonObjectSchema.required().contains(property), enumType)));
-            map.put("properties", properties);
-
-            if (strict) {
-                // When using Structured Outputs with strict=true, all fields must be required.
-                // See
-                // https://platform.openai.com/docs/guides/structured-outputs/supported-schemas?api-mode=chat#all-fields-must-be-required
-                map.put(
-                        "required",
-                        jsonObjectSchema.properties().keySet().stream().toList());
-            } else {
-                if (jsonObjectSchema.required() != null) {
-                    map.put("required", jsonObjectSchema.required());
-                }
-            }
-
-            if (strict) {
-                map.put("additionalProperties", false);
-            }
-
-            if (!jsonObjectSchema.definitions().isEmpty()) {
-                map.put("$defs", toMap(jsonObjectSchema.definitions(), strict));
-            }
-
-            return map;
-        } else if (jsonSchemaElement instanceof JsonArraySchema jsonArraySchema) {
-            Map<String, Object> map = new LinkedHashMap<>();
-            map.put("type", type("array", strict, required));
-            if (jsonArraySchema.description() != null) {
-                map.put("description", jsonArraySchema.description());
-            }
-            if (jsonArraySchema.items() != null) {
-                map.put("items", toMap(jsonArraySchema.items(), strict));
-            } else {
-                map.put("items", Collections.emptyMap());
-            }
-            return map;
-        } else if (jsonSchemaElement instanceof JsonEnumSchema jsonEnumSchema) {
-            Map<String, Object> map = new LinkedHashMap<>();
-            if (enumType != null) {
-                map.put("type", enumType);
-            } else {
-                map.put("type", type("string", strict, required));
-            }
-            if (jsonEnumSchema.description() != null) {
-                map.put("description", jsonEnumSchema.description());
-            }
-            map.put("enum", jsonEnumSchema.enumValues());
-            return map;
-        } else if (jsonSchemaElement instanceof JsonStringSchema jsonStringSchema) {
-            Map<String, Object> map = new LinkedHashMap<>();
-            map.put("type", type("string", strict, required));
-            if (jsonStringSchema.description() != null) {
-                map.put("description", jsonStringSchema.description());
-            }
-            return map;
-        } else if (jsonSchemaElement instanceof JsonIntegerSchema jsonIntegerSchema) {
-            Map<String, Object> map = new LinkedHashMap<>();
-            map.put("type", type("integer", strict, required));
-            if (jsonIntegerSchema.description() != null) {
-                map.put("description", jsonIntegerSchema.description());
-            }
-            return map;
-        } else if (jsonSchemaElement instanceof JsonNumberSchema jsonNumberSchema) {
-            Map<String, Object> map = new LinkedHashMap<>();
-            map.put("type", type("number", strict, required));
-            if (jsonNumberSchema.description() != null) {
-                map.put("description", jsonNumberSchema.description());
-            }
-            return map;
-        } else if (jsonSchemaElement instanceof JsonBooleanSchema jsonBooleanSchema) {
-            Map<String, Object> map = new LinkedHashMap<>();
-            map.put("type", type("boolean", strict, required));
-            if (jsonBooleanSchema.description() != null) {
-                map.put("description", jsonBooleanSchema.description());
-            }
-            return map;
-        } else if (jsonSchemaElement instanceof JsonReferenceSchema) {
-            Map<String, Object> map = new LinkedHashMap<>();
-            String reference = ((JsonReferenceSchema) jsonSchemaElement).reference();
-            if (reference != null) {
-                map.put("$ref", "#/$defs/" + reference);
-            }
-            return map;
-        } else if (jsonSchemaElement instanceof JsonAnyOfSchema jsonAnyOfSchema) {
-            Map<String, Object> map = new LinkedHashMap<>();
-            if (jsonAnyOfSchema.description() != null) {
-                map.put("description", jsonAnyOfSchema.description());
-            }
-            List<Map<String, Object>> anyOf = jsonAnyOfSchema.anyOf().stream()
-                    .map(element -> toMap(element, strict))
-                    .collect(Collectors.toList());
-            map.put("anyOf", anyOf);
-            return map;
+        if (jsonSchemaElement instanceof JsonObjectSchema obj) {
+            return objectSchemaToMap(obj, strict, required, enumType);
+        } else if (jsonSchemaElement instanceof JsonArraySchema arr) {
+            return arraySchemaToMap(arr, strict, required, enumType);
+        } else if (jsonSchemaElement instanceof JsonEnumSchema en) {
+            return enumSchemaToMap(en, strict, required, enumType);
+        } else if (jsonSchemaElement instanceof JsonStringSchema str) {
+            return stringSchemaToMap(str, strict, required, enumType);
+        } else if (jsonSchemaElement instanceof JsonIntegerSchema integer) {
+            return integerSchemaToMap(integer, strict, required, enumType);
+        } else if (jsonSchemaElement instanceof JsonNumberSchema number) {
+            return numberSchemaToMap(number, strict, required, enumType);
+        } else if (jsonSchemaElement instanceof JsonBooleanSchema bool) {
+            return booleanSchemaToMap(bool, strict, required, enumType);
+        } else if (jsonSchemaElement instanceof JsonReferenceSchema ref) {
+            return referenceSchemaToMap(ref);
+        } else if (jsonSchemaElement instanceof JsonAnyOfSchema anyOf) {
+            return anyOfSchemaToMap(anyOf, strict);
         } else if (jsonSchemaElement instanceof JsonNullSchema) {
-            return Map.of("type", "null");
-        } else if (jsonSchemaElement instanceof JsonRawSchema jsonNative) {
-            @SuppressWarnings("unchecked")
-            var map = (Map<String, Object>) Json.fromJson(jsonNative.schema(), Map.class);
-            return map;
+            return nullSchemaToMap();
+        } else if (jsonSchemaElement instanceof JsonRawSchema raw) {
+            return rawSchemaToMap(raw);
         } else {
             throw new IllegalArgumentException("Unknown type: " + jsonSchemaElement.getClass());
         }
+    }
+
+    private static Map<String, Object> objectSchemaToMap(JsonObjectSchema obj, boolean strict, boolean required, String enumType) {
+        Map<String, Object> map = new LinkedHashMap<>();
+        map.put("type", type("object", strict, required));
+        putDescriptionIfPresent(map, obj.description());
+        
+        Map<String, Map<String, Object>> propertiesMap = new LinkedHashMap<>();
+        obj.properties().forEach((key, value) ->
+                propertiesMap.put(key, toMap(value, strict, obj.required().contains(key), enumType)));
+        map.put("properties", propertiesMap);
+
+        if (strict) {
+            map.put("required", obj.properties().keySet().stream().toList());
+            map.put("additionalProperties", false);
+        } else if (obj.required() != null && !obj.required().isEmpty()) {
+            map.put("required", obj.required());
+        }
+
+        if (!obj.definitions().isEmpty()) {
+            map.put(DEFINITIONS_REF, toMap(obj.definitions(), strict));
+        }
+        return map;
+    }
+
+    private static Map<String, Object> arraySchemaToMap(JsonArraySchema arr, boolean strict,
+                                                        boolean required, String enumType) {
+        Map<String, Object> map = new LinkedHashMap<>();
+        map.put("type", type("array", strict, required));
+        putDescriptionIfPresent(map, arr.description());
+        map.put("items", arr.items() != null ? toMap(arr.items(), strict) : Collections.emptyMap());
+        return map;
+    }
+
+    private static Map<String, Object> enumSchemaToMap(JsonEnumSchema en, boolean strict,
+                                                    boolean required, String enumType) {
+        Map<String, Object> map = new LinkedHashMap<>();
+        map.put("type", enumType != null ? enumType : type("string", strict, required));
+        putDescriptionIfPresent(map, en.description());
+        map.put("enum", en.enumValues());
+        return map;
+    }
+
+    private static Map<String, Object> stringSchemaToMap(JsonStringSchema str, boolean strict,
+                                                        boolean required, String enumType) {
+        Map<String, Object> map = new LinkedHashMap<>();
+        map.put("type", type("string", strict, required));
+        putDescriptionIfPresent(map, str.description());
+        return map;
+    }
+
+    private static Map<String, Object> integerSchemaToMap(JsonIntegerSchema integer, boolean strict,
+                                                        boolean required, String enumType) {
+        Map<String, Object> map = new LinkedHashMap<>();
+        map.put("type", type("integer", strict, required));
+        putDescriptionIfPresent(map, integer.description());
+        return map;
+    }
+
+    private static Map<String, Object> numberSchemaToMap(JsonNumberSchema number, boolean strict,
+                                                        boolean required, String enumType) {
+        Map<String, Object> map = new LinkedHashMap<>();
+        map.put("type", type("number", strict, required));
+        putDescriptionIfPresent(map, number.description());
+        return map;
+    }
+
+    private static Map<String, Object> booleanSchemaToMap(JsonBooleanSchema bool, boolean strict,
+                                                        boolean required, String enumType) {
+        Map<String, Object> map = new LinkedHashMap<>();
+        map.put("type", type("boolean", strict, required));
+        putDescriptionIfPresent(map, bool.description());
+        return map;
+    }
+
+    private static Map<String, Object> referenceSchemaToMap(JsonReferenceSchema ref) {
+        Map<String, Object> map = new LinkedHashMap<>();
+        if (ref.reference() != null) {
+            map.put("$ref", "#/" + DEFINITIONS_REF + "/" + ref.reference());
+        }
+        return map;
+    }
+
+    private static Map<String, Object> anyOfSchemaToMap(JsonAnyOfSchema anyOf, boolean strict) {
+        Map<String, Object> map = new LinkedHashMap<>();
+        putDescriptionIfPresent(map, anyOf.description());
+        List<Map<String, Object>> anyOfList = anyOf.anyOf().stream()
+                .map(e -> toMap(e, strict))
+                .collect(Collectors.toList());
+        map.put("anyOf", anyOfList);
+        return map;
+    }
+
+    private static Map<String, Object> nullSchemaToMap() {
+        return Map.of("type", "null");
+    }
+
+    private static Map<String, Object> rawSchemaToMap(JsonRawSchema raw) {
+        @SuppressWarnings("unchecked")
+        Map<String, Object> map = (Map<String, Object>) Json.fromJson(raw.schema(), Map.class);
+        return map;
     }
 
     private static Object type(String type, boolean strict, boolean required) {
@@ -544,6 +634,24 @@ public class JsonSchemaElementUtils {
             this.jsonSchemaElement = jsonSchemaElement;
             this.reference = reference;
             this.recursionDetected = recursionDetected;
+        }
+    }
+
+    private static class SchemaGenerationContext {
+        final Class<?> clazz;
+        final Type type;
+        final String fieldDescription;
+        final boolean areSubFieldsRequiredByDefault;
+        final Map<Class<?>, VisitedClassMetadata> visited;
+
+        SchemaGenerationContext(Class<?> clazz, Type type, String fieldDescription,
+                                boolean areSubFieldsRequiredByDefault,
+                                Map<Class<?>, VisitedClassMetadata> visited) {
+            this.clazz = clazz;
+            this.type = type;
+            this.fieldDescription = fieldDescription;
+            this.areSubFieldsRequiredByDefault = areSubFieldsRequiredByDefault;
+            this.visited = visited;
         }
     }
 }
