@@ -1,6 +1,7 @@
 package com.dev.core.controllers;
 
 import com.dev.core.dtos.ServicoDTO;
+import com.dev.core.dtos.ServicoRequestFrontendDTO;
 import com.dev.core.dtos.ServicoResponseDTO;
 import com.dev.core.models.Servico;
 import com.dev.core.services.ServicoServiceImpl;
@@ -78,7 +79,7 @@ public class ServicoController {
             responseCode = "201",
             description = "Serviço criado com sucesso"
     )
-    public Servico create(@RequestBody Servico dto) {
+    public Servico create(@RequestBody ServicoRequestFrontendDTO dto) {
         return servicoService.create(dto);
     }
 
@@ -106,7 +107,7 @@ public class ServicoController {
     @ApiResponse(responseCode = "404", description = "Serviço não encontrado")
     public Servico update(
             @PathVariable UUID id,
-            @RequestBody Servico dto
+            @RequestBody ServicoRequestFrontendDTO dto
     ) {
         return servicoService.update(id, dto);
     }

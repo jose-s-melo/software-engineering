@@ -106,7 +106,9 @@ public class AuthController {
                             value = """
                         {
                           "email": "usuario@barbearia.com",
-                          "password": "123456"
+                          "password": "123456",
+                          "phone": "83888888888",
+                          "name": "Jose"
                         }
                         """
                     )

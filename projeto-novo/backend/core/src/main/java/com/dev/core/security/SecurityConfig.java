@@ -55,7 +55,7 @@ public class SecurityConfig {
                 .authenticationProvider(authenticationProvider())
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/login").permitAll()
-                        .requestMatchers("/api/auth/register").hasAnyRole("ADMIN", "BARBEIRO")
+                        .requestMatchers("/api/auth/register").permitAll()
                         .requestMatchers("/api/auth/changePassword").permitAll()
                         .requestMatchers("/api/auth/forgot").permitAll()
                         .requestMatchers("/api/auth/forgotConfirm").permitAll()

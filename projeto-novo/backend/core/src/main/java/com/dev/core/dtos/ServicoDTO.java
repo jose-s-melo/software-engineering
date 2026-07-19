@@ -13,18 +13,20 @@ public record ServicoDTO(
                 description = "Nome do serviço",
                 example = "Corte Degradê"
         )
-        String nome,
+        String name,
 
         @Schema(
                 description = "Preço do serviço",
                 example = "45.00"
         )
-        BigDecimal preco,
+        BigDecimal price,
 
         @Schema(
                 description = "Tempo estimado de execução",
                 example = "01:40"
         )
-        String tempoEstimado
+        String estimatedTime,
+
+        String description
 ) {
 }

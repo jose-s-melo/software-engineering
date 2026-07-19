@@ -77,8 +77,8 @@ public class AtendimentoController {
                 atendimento.getEmailClient(),
                 atendimento.getData(),
                 atendimento.getHora(),
-                atendimento.getServico().getNome(),
-                atendimento.getServico().getPreco(),
+                atendimento.getServico().getName(),
+                atendimento.getServico().getPrice(),
                 atendimento.getStatus()
         );
     }

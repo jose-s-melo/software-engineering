@@ -35,11 +35,13 @@ public class Servico {
     private UUID id;
 
     @Column(nullable = false)
-    private String nome;
+    private String name;
 
     @Column(nullable = false, precision = 10, scale = 2)
-    private BigDecimal preco;
+    private BigDecimal price;
 
     @Column(nullable = false)
-    private String tempoEstimado;
+    private String estimatedTime;
+
+    private String description;
 }

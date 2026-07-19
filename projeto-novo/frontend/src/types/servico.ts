@@ -3,4 +3,5 @@ export interface Servico {
     serviceName: string;
     price: number;
     description: string;
+    estimatedTime: string;
 }
