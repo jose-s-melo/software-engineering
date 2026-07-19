@@ -11,27 +11,22 @@ const fonteMagilio = localFont({
   src: "../../fonts/MagilioRegular-8Mxvg.otf",
   display: "swap",
 });
-
 const fonteHarmondBold = localFont({
   src: "../../fonts/Harmond-ExtraBoldExpanded.otf",
   display: "swap",
 });
-
 const fonteNewake = localFont({
   src: "../../fonts/Newake-Font-Demo.otf",
   display: "swap",
 });
-
 const fonteAttena = localFont({
   src: "../../fonts/Attena.otf",
   display: "swap",
 });
-
 const fonteStrong = localFont({
   src: "../../fonts/Strong.ttf",
   display: "swap",
 });
-
 const fonteGotham = localFont({
   src: "../../fonts/GothamBold.ttf",
   display: "swap",
@@ -61,12 +56,20 @@ interface DisponibilidadeDTO {
 
 export default function AgendamentoPage() {
   const [datas, setDatas] = useState<any[]>([]);
-  const [dataSelecionada, setDataSelecionada] = useState("");
-  const [servicoSelecionado, setServicoSelecionado] = useState<string | null>(null);
+
+  // 1. AJUSTE: O estado já nasce com a string da data de hoje para evitar falhas no primeiro ciclo de renderização
+  const [dataSelecionada, setDataSelecionada] = useState(() => {
+    return new Date().toISOString().split("T")[0];
+  });
+
+  const [servicoSelecionado, setServicoSelecionado] = useState<string | null>(
+    null,
+  );
   const [horarioSelecionado, setHorarioSelecionado] = useState("");
   const [servicos, setServicos] = useState<Servico[]>([]);
   const [horariosDisponiveis, setHorariosDisponiveis] = useState<string[]>([]);
   const [carregandoServicos, setCarregandoServicos] = useState(true);
+  const [carregandoHorarios, setCarregandoHorarios] = useState(false);
 
   // Gera os 15 próximos dias
   useEffect(() => {
@@ -74,7 +77,20 @@ export default function AgendamentoPage() {
       const diasGerados = [];
       const hoje = new Date();
       const diasDaSemana = ["DOM", "SEG", "TER", "QUA", "QUI", "SEX", "SÁB"];
-      const meses = ["JAN", "FEV", "MAR", "ABR", "MAI", "JUN", "JUL", "AGO", "SET", "OUT", "NOV", "DEZ"];
+      const meses = [
+        "JAN",
+        "FEV",
+        "MAR",
+        "ABR",
+        "MAI",
+        "JUN",
+        "JUL",
+        "AGO",
+        "SET",
+        "OUT",
+        "NOV",
+        "DEZ",
+      ];
 
       for (let i = 0; i < 15; i++) {
         const dataAtual = new Date();
@@ -96,13 +112,12 @@ export default function AgendamentoPage() {
       }
 
       setDatas(diasGerados);
-      setDataSelecionada(diasGerados[0].id);
     };
 
     gerarProximosDias();
   }, []);
 
-  // Buscar serviços na API com controle de loading
+  // Buscar serviços na API
   useEffect(() => {
     const buscarServicos = async () => {
       try {
@@ -120,12 +135,18 @@ export default function AgendamentoPage() {
     buscarServicos();
   }, []);
 
-  // Buscar horários com base na data
+  // 2. AJUSTE: Monitoramento focado na mutação de 'dataSelecionada' com flag de loading dedicado
   useEffect(() => {
     if (!dataSelecionada) return;
 
     const buscarHorarios = async () => {
       try {
+        setCarregandoHorarios(true);
+        console.log(
+          "Iniciando busca de horários para a data:",
+          dataSelecionada,
+        );
+
         const response = await api.get<DisponibilidadeDTO>(
           "agendamentos/disponibilidade",
           {
@@ -133,18 +154,25 @@ export default function AgendamentoPage() {
           },
         );
 
-        console.log("Retorno da API de disponibilidade:", response.data);
+        console.log("Retorno direto da API de disponibilidade:", response.data);
 
         if (response.data && response.data.horariosDisponiveis) {
           setHorariosDisponiveis([...response.data.horariosDisponiveis]);
+          console.log(
+            "Estado de horários atualizado:",
+            response.data.horariosDisponiveis,
+          );
         } else {
+          console.log("Resposta da API válida, mas sem horários listados.");
           setHorariosDisponiveis([]);
         }
 
         setHorarioSelecionado("");
       } catch (err) {
-        console.error("Erro ao buscar horários:", err);
+        console.error("Erro na requisição de horários:", err);
         setHorariosDisponiveis([]);
+      } finally {
+        setCarregandoHorarios(false);
       }
     };
 
@@ -230,9 +258,6 @@ export default function AgendamentoPage() {
           <p className="text-blue-200 italic mb-2">
             Nenhum serviço encontrado ou disponível no momento.
           </p>
-          <span className="text-xs text-blue-300 opacity-75 block">
-            Verifique a conexão com a API de serviços.
-          </span>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -242,9 +267,10 @@ export default function AgendamentoPage() {
               <button
                 key={servico.id}
                 onClick={() => setServicoSelecionado(servico.id)}
-                style={isSelected ? { borderColor: COLORS.redLight, borderWidth: "2px" } : {}}
                 className={`flex flex-col items-start p-6 bg-blue-900 hover:bg-blue-800 text-white rounded-none border transition-transform duration-300 hover:scale-105 shadow-md w-full ${
-                  isSelected ? "ring-2 ring-red-500" : "border-transparent"
+                  isSelected
+                    ? "ring-2 ring-red-500 border-white"
+                    : "border-transparent"
                 }`}
               >
                 <span
@@ -253,9 +279,14 @@ export default function AgendamentoPage() {
                 >
                   {servico.nome}
                 </span>
-                <span className="text-blue-300 text-sm mb-4">{servico.tempo}</span>
+                <span className="text-blue-300 text-sm mb-4">
+                  {servico.tempo}
+                </span>
                 <span
-                  style={{ color: COLORS.blue, backgroundColor: COLORS.offWhite }}
+                  style={{
+                    color: COLORS.blue,
+                    backgroundColor: COLORS.offWhite,
+                  }}
                   className="font-extrabold text-xl mt-auto px-3 py-1"
                 >
                   {servico.preco}
@@ -292,8 +323,12 @@ export default function AgendamentoPage() {
             </button>
           </div>
 
-          <div className="flex flex-wrap gap-4 mt-8">
-            {horariosDisponiveis.length === 0 ? (
+          <div className="flex flex-wrap gap-4 mt-8 justify-center">
+            {carregandoHorarios ? (
+              <p className="text-blue-300 italic text-center w-full py-4">
+                Buscando horários na agenda...
+              </p>
+            ) : horariosDisponiveis.length === 0 ? (
               <p className="text-blue-300 italic text-center w-full py-4">
                 Nenhum horário disponível para esta data.
               </p>

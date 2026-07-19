@@ -1,31 +1,25 @@
 package com.dev.core.services;
 
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.util.List;
+
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.dev.core.dtos.AtendimentoAdminRequestDTO;
 import com.dev.core.dtos.AtendimentoRequestDTO;
 import com.dev.core.models.Agendamento;
 import com.dev.core.models.Atendimento;
 import com.dev.core.models.Servico;
 import com.dev.core.models.StatusAtendimento;
-import com.dev.core.models.user.User;
 import com.dev.core.repositories.AgendamentoRepository;
-import com.dev.core.repositories.ServicoRepository;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.stereotype.Service;
-
 import com.dev.core.repositories.AtendimentoRepository;
+import com.dev.core.repositories.ServicoRepository;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.time.Instant;
-import java.time.LocalDate;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
-import java.util.List;
-import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -42,7 +36,7 @@ public class AtendimentoService {
                 .orElseThrow(() -> new RuntimeException("Serviço não encontrado."));
 
         // 2. Busca a grade de horários do barbeiro para aquele dia
-        Agendamento agendaDoDia = agendamentoRepository.findByData(dto.data())
+        Agendamento agendaDoDia = agendamentoRepository.findFirstByData(dto.data())
                 .orElseThrow(() -> new RuntimeException("Não há horários cadastrados para este dia."));
 
         // 3. Valida e remove o horário da lista de disponíveis

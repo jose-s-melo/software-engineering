@@ -1,18 +1,15 @@
 package com.dev.core.services;
 
-import com.dev.core.models.Agendamento;
-import com.dev.core.models.Atendimento;
-import com.dev.core.models.StatusAtendimento;
-import com.dev.core.repositories.AgendamentoRepository;
-import jakarta.persistence.EntityNotFoundException;
-import jakarta.transaction.Transactional;
-import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-
 import java.time.LocalDate;
 import java.util.List;
-import java.util.UUID;
+
+import org.springframework.stereotype.Service;
+
+import com.dev.core.models.Agendamento;
+import com.dev.core.repositories.AgendamentoRepository;
+
+import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
 @Service
 @RequiredArgsConstructor // Cria o construtor automaticamente via Lombok
 public class AgendamentoService {
@@ -25,11 +22,22 @@ public class AgendamentoService {
      */
     @Transactional
     public Agendamento criarAgenda(LocalDate data, List<String> horarios) {
-        Agendamento agendamento = Agendamento.builder()
-                .data(data)
-                .diaSemana(data.getDayOfWeek())
-                .horariosDisponiveis(horarios)
-                .build();
+        Agendamento agendamento = null;
+
+        if (agendamentoRepository.existsByData(data)) {
+            agendamento = agendamentoRepository.findFirstByData(data).orElseThrow(() -> new RuntimeException("Data não encontrada"));
+
+            for (String s : horarios) {
+                agendamento.getHorariosDisponiveis().add(s);
+            }
+        } else {
+            agendamento = Agendamento.builder()
+                    .data(data)
+                    .diaSemana(data.getDayOfWeek())
+                    .horariosDisponiveis(horarios)
+                    .build();
+        }
+
 
         return agendamentoRepository.save(agendamento);
     }
@@ -39,7 +47,10 @@ public class AgendamentoService {
      */
     @Transactional
     public Agendamento buscarPorData(LocalDate data) {
-        return agendamentoRepository.findByData(data)
+
+        System.out.println(agendamentoRepository.findFirstByData(data).get().getData());
+
+        return agendamentoRepository.findFirstByData(data)
                 .orElseThrow(() -> new RuntimeException("Nenhuma agenda disponível para este barbeiro nesta data."));
     }
 
