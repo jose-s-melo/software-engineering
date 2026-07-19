@@ -1,7 +1,6 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import api from "../api/auth/api";
 import { login } from "../api/auth/authService";
 
 const COLORS = {
@@ -115,7 +114,7 @@ function Input({ label, type = "text", value, onChange, placeholder, icon }) {
   );
 }
 
-function LoginForm({ onSwitch }) {
+function LoginForm() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -125,34 +124,27 @@ function LoginForm({ onSwitch }) {
   const handle = async () => {
     if (!email || !password) { setError("Preencha todos os campos."); return; }
     if (!email.includes("@")) { setError("E-mail inválido."); return; }
-    
+
     setError("");
     setLoading(true);
 
     try {
-      const response = await login({
-        "email": email,
-        "password": password
-      })
+      const response = await login({ email, password });
 
-      const data = response;
+      if (response.message === "Success") {
+        localStorage.setItem("token", response.token);
+        localStorage.setItem("role", response.user.role);
 
-      if (response.message == "Success") {
-        // Salva o token e a role no navegador
-        localStorage.setItem("token", data.token);
-        localStorage.setItem("role", data.user.role);
-
-        // Direciona de acordo com o perfil
-        if (data.user.role === "ADMIN") {
+        if (response.user.role === "ADMIN") {
           router.push("/admin/dashboard");
-        } else if (data.user.role === "CLIENTE") {
+        } else if (response.user.role === "CLIENTE") {
           router.push("/agendamento");
         } else {
           setError("Perfil de usuário não reconhecido.");
           setLoading(false);
         }
       } else {
-        setError(data.message || "Erro ao fazer login. Verifique suas credenciais.");
+        setError(response.message || "Erro ao fazer login. Verifique suas credenciais.");
         setLoading(false);
       }
     } catch (err) {
@@ -164,14 +156,20 @@ function LoginForm({ onSwitch }) {
 
   return (
     <div>
-      <h2 style={{ fontSize: 26, fontWeight: 700, color: COLORS.blue, margin: "0 0 4px", fontFamily: "'Playfair Display', Georgia, serif" }}>Bem-vindo de volta</h2>
-      <p style={{ color: COLORS.gray, fontSize: 14, margin: "0 0 28px" }}>Entre na sua conta para agendar seu estilo.</p>
+      <h2 style={{ fontSize: 26, fontWeight: 700, color: COLORS.blue, margin: "0 0 4px", fontFamily: "'Playfair Display', Georgia, serif" }}>
+        Bem-vindo de volta
+      </h2>
+      <p style={{ color: COLORS.gray, fontSize: 14, margin: "0 0 28px" }}>
+        Entre na sua conta para agendar seu estilo.
+      </p>
 
       <Input label="E-mail" type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="seu@email.com" icon="✉" />
       <Input label="Senha" type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" icon="🔒" />
 
       <div style={{ textAlign: "right", marginTop: -10, marginBottom: 20 }}>
-        <span style={{ fontSize: 13, color: COLORS.red, cursor: "pointer", fontWeight: 500 }}>Esqueci minha senha</span>
+        <span style={{ fontSize: 13, color: COLORS.red, cursor: "pointer", fontWeight: 500 }}>
+          Esqueci minha senha
+        </span>
       </div>
 
       {error && (
@@ -201,91 +199,11 @@ function LoginForm({ onSwitch }) {
       >
         {loading ? "Entrando..." : "Entrar ✂️"}
       </button>
-
-      <div style={{ borderTop: `1px solid ${COLORS.grayLight}`, margin: "28px 0 20px" }} />
-
-      <p style={{ textAlign: "center", fontSize: 14, color: COLORS.gray, margin: 0 }}>
-        Novo cliente?{" "}
-        <span onClick={onSwitch} style={{ color: COLORS.red, fontWeight: 700, cursor: "pointer" }}>
-          Crie sua conta
-        </span>
-      </p>
-    </div>
-  );
-}
-
-function RegisterForm({ onSwitch }) {
-  const [name, setName] = useState("");
-  const [phone, setPhone] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirm, setConfirm] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-
-  const handle = () => {
-    if (!name || !phone || !email || !password || !confirm) { setError("Preencha todos os campos."); return; }
-    if (!email.includes("@")) { setError("E-mail inválido."); return; }
-    if (password.length < 6) { setError("Senha deve ter ao menos 6 caracteres."); return; }
-    if (password !== confirm) { setError("As senhas não coincidem."); return; }
-    setError("");
-    setLoading(true);
-    setTimeout(() => { setLoading(false); alert("Cadastro realizado! Bem-vindo à barbearia! ✂️"); onSwitch(); }, 1600);
-  };
-
-  return (
-    <div>
-      <h2 style={{ fontSize: 26, fontWeight: 700, color: COLORS.blue, margin: "0 0 4px", fontFamily: "'Playfair Display', Georgia, serif" }}>Crie sua conta</h2>
-      <p style={{ color: COLORS.gray, fontSize: 14, margin: "0 0 28px" }}>Junte-se à família e agende com facilidade.</p>
-
-      <Input label="Nome completo" value={name} onChange={e => setName(e.target.value)} placeholder="João da Silva" icon="👤" />
-      <Input label="Telefone / WhatsApp" type="tel" value={phone} onChange={e => setPhone(e.target.value)} placeholder="(83) 99999-9999" icon="📱" />
-      <Input label="E-mail" type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="seu@email.com" icon="✉" />
-      <Input label="Senha" type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Mín. 6 caracteres" icon="🔒" />
-      <Input label="Confirmar senha" type="password" value={confirm} onChange={e => setConfirm(e.target.value)} placeholder="Repita a senha" icon="🔒" />
-
-      {error && (
-        <div style={{ background: COLORS.redLight, border: `1px solid ${COLORS.red}`, borderRadius: 8, padding: "10px 14px", color: COLORS.redDark, fontSize: 13, marginBottom: 16 }}>
-          {error}
-        </div>
-      )}
-
-      <button
-        onClick={handle}
-        disabled={loading}
-        style={{
-          width: "100%",
-          padding: "15px",
-          background: loading ? COLORS.redDark : COLORS.red,
-          color: COLORS.white,
-          border: "none",
-          borderRadius: 10,
-          fontSize: 16,
-          fontWeight: 700,
-          cursor: loading ? "not-allowed" : "pointer",
-          letterSpacing: "0.04em",
-          fontFamily: "'Playfair Display', Georgia, serif",
-          transition: "background 0.2s",
-        }}
-      >
-        {loading ? "Cadastrando..." : "Criar conta ✂️"}
-      </button>
-
-      <div style={{ borderTop: `1px solid ${COLORS.grayLight}`, margin: "28px 0 20px" }} />
-
-      <p style={{ textAlign: "center", fontSize: 14, color: COLORS.gray, margin: 0 }}>
-        Já tem conta?{" "}
-        <span onClick={onSwitch} style={{ color: COLORS.blue, fontWeight: 700, cursor: "pointer" }}>
-          Entrar
-        </span>
-      </p>
     </div>
   );
 }
 
 export default function App() {
-  const [mode, setMode] = useState("login");
-
   return (
     <>
       <style>{`
@@ -310,17 +228,14 @@ export default function App() {
           position: "relative",
           overflow: "hidden",
         }}>
-          {/* Decorative background lines */}
           <div style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, opacity: 0.04 }}>
             {[...Array(12)].map((_, i) => (
               <div key={i} style={{ position: "absolute", left: `${i * 9}%`, top: 0, bottom: 0, width: 1, background: COLORS.white }} />
             ))}
           </div>
 
-          {/* Top accent bar */}
           <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 6, background: `linear-gradient(90deg, ${COLORS.red}, ${COLORS.white}, ${COLORS.red})` }} />
 
-          {/* Barber poles */}
           <div style={{ display: "flex", gap: 32, marginBottom: 48, alignItems: "center" }}>
             <BarberPole />
             <div style={{ textAlign: "center" }}>
@@ -337,15 +252,12 @@ export default function App() {
             <BarberPole />
           </div>
 
-          {/* Divider */}
           <div style={{ width: 60, height: 2, background: COLORS.red, marginBottom: 32 }} />
 
-          {/* Tagline */}
           <p style={{ color: "rgba(255,255,255,0.8)", fontSize: 16, textAlign: "center", lineHeight: 1.7, maxWidth: 280, fontStyle: "italic" }}>
             "O homem que cuida da aparência, cuida da vida. Agende seu próximo corte com quem entende de estilo."
           </p>
 
-          {/* Bottom icons */}
           <div style={{ display: "flex", gap: 24, marginTop: 48 }}>
             {["✂️ Corte", "💈 Barba", "🪒 Navalha"].map(item => (
               <div key={item} style={{ background: "rgba(255,255,255,0.1)", borderRadius: 10, padding: "10px 16px", color: COLORS.white, fontSize: 13, textAlign: "center" }}>
@@ -354,7 +266,6 @@ export default function App() {
             ))}
           </div>
 
-          {/* Bottom accent */}
           <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 6, background: `linear-gradient(90deg, ${COLORS.red}, ${COLORS.white}, ${COLORS.red})` }} />
         </div>
 
@@ -365,7 +276,6 @@ export default function App() {
           alignItems: "center",
           justifyContent: "center",
           padding: "48px 32px",
-          overflowY: "auto",
         }}>
           <div style={{
             width: "100%",
@@ -378,42 +288,10 @@ export default function App() {
             animation: "fadeSlide 0.45s ease",
             position: "relative",
           }}>
-            {/* Red accent top-left corner */}
             <div style={{ position: "absolute", top: 0, left: 0, width: 60, height: 4, background: COLORS.red, borderRadius: "20px 0 20px 0" }} />
             <div style={{ position: "absolute", top: 0, right: 0, width: 60, height: 4, background: COLORS.blue, borderRadius: "0 20px 0 20px" }} />
 
-            {/* Tab switcher */}
-            <div style={{ display: "flex", background: COLORS.grayLighter, borderRadius: 12, padding: 4, marginBottom: 36 }}>
-              {["login", "register"].map(m => (
-                <button
-                  key={m}
-                  onClick={() => setMode(m)}
-                  style={{
-                    flex: 1,
-                    padding: "10px",
-                    border: "none",
-                    borderRadius: 9,
-                    cursor: "pointer",
-                    fontSize: 14,
-                    fontWeight: mode === m ? 700 : 400,
-                    background: mode === m ? COLORS.white : "transparent",
-                    color: mode === m ? COLORS.blue : COLORS.gray,
-                    boxShadow: mode === m ? "0 2px 8px rgba(26,58,107,0.12)" : "none",
-                    transition: "all 0.2s",
-                    fontFamily: "'Playfair Display', Georgia, serif",
-                  }}
-                >
-                  {m === "login" ? "Entrar" : "Cadastrar"}
-                </button>
-              ))}
-            </div>
-
-            <div key={mode} style={{ animation: "fadeSlide 0.3s ease" }}>
-              {mode === "login"
-                ? <LoginForm onSwitch={() => setMode("register")} />
-                : <RegisterForm onSwitch={() => setMode("login")} />
-              }
-            </div>
+            <LoginForm />
           </div>
         </div>
       </div>
