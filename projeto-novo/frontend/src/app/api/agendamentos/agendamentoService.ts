@@ -32,11 +32,11 @@ export async function getAgendamentos(): Promise<Agendamento[]> {
   return response.data;
 }
 
-export async function getDisponibilidade(): Promise<
-  DisponibilidadeAgendamento[]
-> {
-  const response = await api.get<DisponibilidadeAgendamento[]>(
-    "/agendamentos/disponibilidade",
+export async function getDisponibilidade(
+  data: string,
+): Promise<DisponibilidadeAgendamento> {
+  const response = await api.get<DisponibilidadeAgendamento>(
+    `/agendamentos/disponibilidade?data=${data}`,
   );
 
   return response.data;

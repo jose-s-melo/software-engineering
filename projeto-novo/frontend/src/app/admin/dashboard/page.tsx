@@ -18,13 +18,20 @@ import {
 } from "@/app/api/atendimentos/atendimentoService";
 import { getClients } from "@/app/api/clients/clientService";
 import { getServicos } from "@/app/api/servicos/servicoService";
-// Importando o novo serviço de agendamentos/disponibilidade
 import {
   criarAgendamento,
   NovoAgendamento,
+  getDisponibilidade, // Usando o serviço atualizado
 } from "@/app/api/agendamentos/agendamentoService";
 import { Cliente } from "@/types/cliente";
 import { Servico } from "@/types/servico";
+
+interface DisponibilidadeAgendamento {
+  id: string;
+  data: string;
+  diaSemana: string;
+  horariosDisponiveis: string[];
+}
 
 const COLORS = {
   red: "#C8102E",
@@ -55,14 +62,15 @@ export default function AdminDashboard() {
   const [appointments, setAppointments] = useState<Atendimento[]>([]);
   const [clientes, setClientes] = useState<Cliente[]>([]);
   const [servicos, setServicos] = useState<Servico[]>([]);
+  // Como a requisição agora traz apenas o dia específico, alteramos para um objeto único ou null
+  const [disponibilidadeHoje, setDisponibilidadeHoje] =
+    useState<DisponibilidadeAgendamento | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Estados para controlar o Modal e o novo formulário de disponibilidade
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  // Novo formato do formulário alinhado ao NovoAgendamento
   const [formData, setFormData] = useState<{
     data: string;
     horariosDisponiveis: string[];
@@ -75,12 +83,28 @@ export default function AdminDashboard() {
   const carregarDados = () => {
     setLoading(true);
     setError(null);
-    Promise.all([getAtendimentos(), getClients(), getServicos()])
-      .then(([atendimentosData, clientesData, servicosData]) => {
-        setAppointments(atendimentosData);
-        setClientes(clientesData);
-        setServicos(servicosData);
-      })
+    const hoje = hojeISO();
+
+    // Passando o "hoje" como parâmetro na chamada do getDisponibilidade
+    Promise.all([
+      getAtendimentos(),
+      getClients(),
+      getServicos(),
+      getDisponibilidade(hoje),
+    ])
+      .then(
+        ([
+          atendimentosData,
+          clientesData,
+          servicosData,
+          disponibilidadeData,
+        ]) => {
+          setAppointments(atendimentosData);
+          setClientes(clientesData);
+          setServicos(servicosData);
+          setDisponibilidadeHoje(disponibilidadeData); // Armazena o retorno direto do dia
+        },
+      )
       .catch(() => setError("Não foi possível carregar os dados do painel."))
       .finally(() => setLoading(false));
   };
@@ -108,13 +132,19 @@ export default function AdminDashboard() {
       .reduce((total, a) => total + Number(a.precoServico || 0), 0);
   }, [agendamentosDeHoje]);
 
+  // Contagem direta a partir do estado populado com o dia atual
+  const totalDisponivelHoje = useMemo(() => {
+    return disponibilidadeHoje
+      ? disponibilidadeHoje.horariosDisponiveis.length
+      : 0;
+  }, [disponibilidadeHoje]);
+
   const nomeCliente = (emailClient: string) => {
     return (
       clientesPorEmail.get(emailClient.toLowerCase())?.clientName || emailClient
     );
   };
 
-  // Adiciona um horário temporariamente na lista do formulário
   const handleAddHorarioLista = () => {
     if (!novoHorario || formData.horariosDisponiveis.includes(novoHorario))
       return;
@@ -125,7 +155,6 @@ export default function AdminDashboard() {
     setNovoHorario("");
   };
 
-  // Remove um horário da lista do formulário
   const handleRemoveHorarioLista = (horarioRemover: string) => {
     setFormData((prev) => ({
       ...prev,
@@ -135,7 +164,6 @@ export default function AdminDashboard() {
     }));
   };
 
-  // Envia a nova janela de agendamento para a API
   const handleAddAppointment = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -155,12 +183,10 @@ export default function AdminDashboard() {
 
       await criarAgendamento(payload);
 
-      // Feedback de sucesso e reset
       alert("Nova janela de agendamentos cadastrada com sucesso!");
       setIsModalOpen(false);
       setFormData({ data: hojeISO(), horariosDisponiveis: [] });
 
-      // Opcional: Se você quiser recarregar a lista geral após cadastrar
       carregarDados();
     } catch {
       alert(
@@ -278,7 +304,7 @@ export default function AdminDashboard() {
           />
           <MetricCard
             title="Disponibilidade"
-            value={Math.max(0, 10 - agendamentosDeHoje.length).toString()}
+            value={totalDisponivelHoje.toString()}
             icon={<Clock />}
           />
         </div>
@@ -489,7 +515,6 @@ export default function AdminDashboard() {
                 </div>
               </div>
 
-              {/* Lista visual dos horários adicionados */}
               <div>
                 <label
                   style={{

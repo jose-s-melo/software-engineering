@@ -2,11 +2,14 @@
 
 import { useState, useEffect } from "react";
 import localFont from "next/font/local";
-import { criarAtendimento } from "../api/atendimentos/atendimentoService";
+import {
+  criarAtendimento,
+  NovoAtendimentoCliente,
+} from "@/app/api/atendimentos/atendimentoService";
 import { Servico } from "@/types/servico";
-import api from "../api/auth/api";
+import api from "@/app/api/auth/api";
+import { getServicos } from "../api/servicos/servicoService";
 
-// Fontes de texto oriundas de src/fonts
 const fonteMagilio = localFont({
   src: "../../fonts/MagilioRegular-8Mxvg.otf",
   display: "swap",
@@ -57,7 +60,6 @@ interface DisponibilidadeDTO {
 export default function AgendamentoPage() {
   const [datas, setDatas] = useState<any[]>([]);
 
-  // 1. AJUSTE: O estado já nasce com a string da data de hoje para evitar falhas no primeiro ciclo de renderização
   const [dataSelecionada, setDataSelecionada] = useState(() => {
     return new Date().toISOString().split("T")[0];
   });
@@ -71,7 +73,6 @@ export default function AgendamentoPage() {
   const [carregandoServicos, setCarregandoServicos] = useState(true);
   const [carregandoHorarios, setCarregandoHorarios] = useState(false);
 
-  // Gera os 15 próximos dias
   useEffect(() => {
     const gerarProximosDias = () => {
       const diasGerados = [];
@@ -110,21 +111,19 @@ export default function AgendamentoPage() {
           mes: meses[dataAtual.getMonth()],
         });
       }
-
       setDatas(diasGerados);
     };
 
     gerarProximosDias();
   }, []);
 
-  // Buscar serviços na API
   useEffect(() => {
     const buscarServicos = async () => {
       try {
         setCarregandoServicos(true);
-        const response = await api.get("servicos");
-        console.log("Serviços carregados da API:", response.data);
-        setServicos(Array.isArray(response.data) ? response.data : []);
+        const data = await getServicos();
+        console.log("Serviços buscados:", data);
+        setServicos(data || []);
       } catch (err) {
         console.error("Erro ao buscar serviços:", err);
         setServicos([]);
@@ -135,18 +134,12 @@ export default function AgendamentoPage() {
     buscarServicos();
   }, []);
 
-  // 2. AJUSTE: Monitoramento focado na mutação de 'dataSelecionada' com flag de loading dedicado
   useEffect(() => {
     if (!dataSelecionada) return;
 
     const buscarHorarios = async () => {
       try {
         setCarregandoHorarios(true);
-        console.log(
-          "Iniciando busca de horários para a data:",
-          dataSelecionada,
-        );
-
         const response = await api.get<DisponibilidadeDTO>(
           "agendamentos/disponibilidade",
           {
@@ -154,19 +147,11 @@ export default function AgendamentoPage() {
           },
         );
 
-        console.log("Retorno direto da API de disponibilidade:", response.data);
-
         if (response.data && response.data.horariosDisponiveis) {
           setHorariosDisponiveis([...response.data.horariosDisponiveis]);
-          console.log(
-            "Estado de horários atualizado:",
-            response.data.horariosDisponiveis,
-          );
         } else {
-          console.log("Resposta da API válida, mas sem horários listados.");
           setHorariosDisponiveis([]);
         }
-
         setHorarioSelecionado("");
       } catch (err) {
         console.error("Erro na requisição de horários:", err);
@@ -185,7 +170,7 @@ export default function AgendamentoPage() {
       return;
     }
 
-    const pacoteDeDados = {
+    const pacoteDeDados: NovoAtendimentoCliente = {
       servicoId: servicoSelecionado,
       data: dataSelecionada,
       horarioEscolhido: horarioSelecionado,
@@ -277,10 +262,12 @@ export default function AgendamentoPage() {
                   style={{ color: COLORS.white }}
                   className={`${fonteStrong.className} tracking-wider text-lg mb-2`}
                 >
-                  {servico.nome}
+                  {/* AJUSTADO: servico.serviceName */}
+                  {servico.serviceName}
                 </span>
                 <span className="text-blue-300 text-sm mb-4">
-                  {servico.tempo}
+                  {/* AJUSTADO: servico.estimatedTime */}
+                  {servico.estimatedTime || "Tempo não estimado"}
                 </span>
                 <span
                   style={{
@@ -289,7 +276,8 @@ export default function AgendamentoPage() {
                   }}
                   className="font-extrabold text-xl mt-auto px-3 py-1"
                 >
-                  {servico.preco}
+                  {/* AJUSTADO: servico.price */}
+                  R$ {servico.price}
                 </span>
               </button>
             );
@@ -342,7 +330,7 @@ export default function AgendamentoPage() {
                     style={
                       isSelected ? { backgroundColor: COLORS.redDark } : {}
                     }
-                    className={`flex flex-col items-center justify-center w-[100px] py-2 rounded-none font-bold transition-transform duration-300 text-white bg-blue-900 hover:bg-blue-800 hover:scale-110`}
+                    className="flex flex-col items-center justify-center w-[100px] py-2 rounded-none font-bold transition-transform duration-300 text-white bg-blue-900 hover:bg-blue-800 hover:scale-110"
                   >
                     <span className="text-[9px] uppercase tracking-wider mb-1 font-normal opacity-80">
                       {isSelected ? "Selecionado" : "Agendar"}
