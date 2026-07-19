@@ -3,6 +3,9 @@
 import { useState, useEffect } from "react";
 import localFont from 'next/font/local';
 import { criarAtendimento } from "../api/atendimentos/atendimentoService";
+import { Servico } from "@/types/servico";
+import api from "../api/auth/api";
+import { Horario } from "@/types/horario";
 
 // Fontes de texto oriundas de src/fonts
 const fonteMagilio = localFont({ 
@@ -85,18 +88,39 @@ export default function AgendamentoPage() {
     gerarProximosDias();
   }, []);
 
-  const servicos = [
-    { id: "corte", nome: "Corte Tradicional", preco: "R$ 40,00", tempo: "40 min" },
-    { id: "barba", nome: "Barba Completa", preco: "R$ 35,00", tempo: "30 min" },
-    { id: "combo", nome: "Corte + Barba", preco: "R$ 65,00", tempo: "1h 10min" },
-  ];
+  const [servicos, setServicos] = useState<Servico[]>([]);
 
-  const horarios = [
-    { id: "14:00", tempo: "14:00", disponivel: false },
-    { id: "15:30", tempo: "15:30", disponivel: true },
-    { id: "18:20", tempo: "18:20", disponivel: true },
-    { id: "20:20", tempo: "20:20", disponivel: true },
-  ];
+  // Método de serviços integrado a API, totalmente desmockado.
+  useEffect(() => {
+    const buscarServicos = async () => {
+      try {
+        const response = await api.get("servicos");
+        setServicos(response.data);
+      } catch (err) {
+        console.error(err);
+      }
+    };
+    buscarServicos();
+  }, []);
+
+  const [horarios, setHorarios] = useState<Horario[]>([]);
+
+  //Método de horario integrado a API, totalmente desmockado.
+  useEffect(() => {
+    if (!dataSelecionada) return;
+    const buscarHorarios = async () => {
+      try {
+        const response = await api.get("agendamentos/disponibilidade", {
+          params: { data: dataSelecionada }
+        });
+        setHorarios(response.data);
+      } catch (err) {
+        console.error(err);
+      }
+    };
+
+    buscarHorarios();
+  }, [dataSelecionada]);
 
 
   //Método para integrar o agendamento à API
