@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import localFont from 'next/font/local';
+import { criarAtendimento } from "../api/atendimentos/atendimentoService";
 
 // Fontes de texto oriundas de src/fonts
 const fonteMagilio = localFont({ 
@@ -96,6 +97,31 @@ export default function AgendamentoPage() {
     { id: "18:20", tempo: "18:20", disponivel: true },
     { id: "20:20", tempo: "20:20", disponivel: true },
   ];
+
+
+  //Método para integrar o agendamento à API
+  const handleConfirmarAgendamento = async () => {
+    if (!servicoSelecionado || !dataSelecionada || !horarioSelecionado) {
+      alert("Por favor, preencha todos os campos antes de agendar.");
+      return;
+    }
+
+    const pacoteDeDados = {
+      servicoId: servicoSelecionado, 
+      data: dataSelecionada,
+      horarioEscolhido: horarioSelecionado
+    };
+
+    try {
+      await criarAtendimento(pacoteDeDados);
+      
+      alert("Agendamento realizado com sucesso!");
+      
+    } catch (error) {
+      console.error("Erro ao agendar:", error);
+      alert("Erro ao confirmar agendamento. O servidor retornou um erro.");
+    }
+  };
 
   // ==========================================
   // FUNÇÕES DE ENCAPSULAMENTO VISUAL (RENDER)
@@ -217,7 +243,9 @@ export default function AgendamentoPage() {
           </div>
 
           {horarioSelecionado && (
-            <button 
+            <button
+              //Botão de confirmar agendamento implementado
+              onClick={handleConfirmarAgendamento}
               // Aplica a cor no botão final de confirmação
               style={{ backgroundColor: COLORS.redDark }}
               className={`${fonteGotham.className} w-full mt-10 hover:opacity-90 text-white font-bold py-4 rounded-none transition-colors text-lg`}

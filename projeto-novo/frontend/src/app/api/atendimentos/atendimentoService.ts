@@ -21,6 +21,13 @@ export interface NovoAtendimentoAdmin {
   status: StatusAtendimento;
 }
 
+//Interface criada para agendamento do cliente
+export interface NovoAtendimentoCliente {
+  servicoId: string;
+  data: string;
+  horarioEscolhido: string;
+}
+
 export async function getAtendimentos(): Promise<Atendimento[]> {
   const response = await api.get<Atendimento[]>("atendimentos");
   return response.data;
@@ -33,5 +40,11 @@ export async function getAtendimentosPorCliente(email: string): Promise<Atendime
 
 export async function criarAtendimentoAdmin(data: NovoAtendimentoAdmin): Promise<Atendimento> {
   const response = await api.post<Atendimento>("atendimentos/admin", data);
+  return response.data;
+}
+
+//Função criada para realizar o agendamento por parte do cliente
+export async function criarAtendimento(dados: NovoAtendimentoCliente) {
+  const response = await api.post("atendimentos", dados);
   return response.data;
 }
