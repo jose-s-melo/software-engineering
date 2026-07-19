@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
 import com.dev.core.dtos.ChangePasswordRequestDTO;
+import com.dev.core.dtos.ClientFrontendResponseDTO;
 import com.dev.core.dtos.RegisterRequestDTO;
 import com.dev.core.dtos.UserResponseDTO;
 import com.dev.core.exceptions.EmailAlreadyExistsException;
@@ -118,12 +119,14 @@ public class UserService {
         return new UserResponseDTO(user.getId(), user.getEmail(), user.getRole());
     }
 
-    public List<UserResponseDTO> getAllClients() {
+    public List<ClientFrontendResponseDTO> getAllClients() {
         return userRepository.findAllByRole(UserRole.CLIENTE)
                 .stream()
-                .map(user -> new UserResponseDTO(
+                .map(user -> new ClientFrontendResponseDTO(
                         user.getId(),
+                        user.getName(),
                         user.getEmail(),
+                        user.getPhone(),
                         user.getRole()))
                 .toList();
     }

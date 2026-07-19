@@ -28,6 +28,10 @@ function toClientRequest(data: Omit<Cliente, "id">) {
 
 export async function getClients(): Promise<Cliente[]> {
   const response = await api.get<ClientDTO[]>("users/clients");
+
+  console.log("Status:", response.status);
+  console.log("Resposta da API:", response.data);
+
   return response.data.map(toCliente);
 }
 

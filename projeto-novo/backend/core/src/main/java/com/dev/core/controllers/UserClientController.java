@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.dev.core.dtos.ClientFrontendResponseDTO;
 import com.dev.core.dtos.RegisterRequestDTO;
 import com.dev.core.dtos.UserResponseDTO;
 import com.dev.core.services.ClientFrontendRequestDTO;
@@ -30,7 +31,7 @@ public class UserClientController {
 
 
     @GetMapping
-    public ResponseEntity<List<UserResponseDTO>> getClients() {
+    public ResponseEntity<List<ClientFrontendResponseDTO>> getClients() {
         return ResponseEntity.ok(userService.getAllClients());
     } 
 
