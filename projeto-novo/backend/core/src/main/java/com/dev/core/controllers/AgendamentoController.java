@@ -1,36 +1,27 @@
 package com.dev.core.controllers;
 
-import com.dev.core.dtos.AgendamentoRequestDTO;
-import com.dev.core.dtos.AgendamentoResponseDTO;
-import com.dev.core.dtos.agenda.AgendaRequestDTO;
-import com.dev.core.models.Agendamento;
-import com.dev.core.services.AgendamentoService;
-import org.springframework.web.bind.annotation.RestController;
+import java.time.LocalDate;
 
-import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
-import java.time.LocalDate;
-import java.util.List;
-import java.util.UUID;
+import com.dev.core.dtos.AgendamentoRequestDTO;
+import com.dev.core.dtos.AgendamentoResponseDTO;
+import com.dev.core.models.Agendamento;
+import com.dev.core.services.AgendamentoService;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
-import org.springframework.format.annotation.DateTimeFormat;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-
-import java.time.LocalDate;
-import java.util.List;
-import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Tag(name = "Agendamentos", description = "Endpoints para gerenciamento da agenda de horários do barbeiro")
 @RestController
@@ -66,6 +57,9 @@ public class AgendamentoController {
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate data) {
 
         Agendamento agenda = agendamentoService.buscarPorData(data);
+        System.out.println(converterParaDTO(agenda));
+        System.out.println(data);
+
         return ResponseEntity.ok(converterParaDTO(agenda));
     }
 

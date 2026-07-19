@@ -1,12 +1,30 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from 'react';
-import { Users, Calendar, DollarSign, Clock, Scissors, X } from 'lucide-react';
-import { getAtendimentos, criarAtendimentoAdmin, Atendimento, StatusAtendimento } from '@/app/api/atendimentos/atendimentoService';
-import { getClients } from '@/app/api/clients/clientService';
-import { getServicos } from '@/app/api/servicos/servicoService';
-import { Cliente } from '@/types/cliente';
-import { Servico } from '@/types/servico';
+import React, { useEffect, useMemo, useState } from "react";
+import {
+  Users,
+  Calendar,
+  DollarSign,
+  Clock,
+  Scissors,
+  X,
+  Plus,
+  Trash2,
+} from "lucide-react";
+import {
+  getAtendimentos,
+  Atendimento,
+  StatusAtendimento,
+} from "@/app/api/atendimentos/atendimentoService";
+import { getClients } from "@/app/api/clients/clientService";
+import { getServicos } from "@/app/api/servicos/servicoService";
+// Importando o novo serviço de agendamentos/disponibilidade
+import {
+  criarAgendamento,
+  NovoAgendamento,
+} from "@/app/api/agendamentos/agendamentoService";
+import { Cliente } from "@/types/cliente";
+import { Servico } from "@/types/servico";
 
 const COLORS = {
   red: "#C8102E",
@@ -15,7 +33,7 @@ const COLORS = {
   offWhite: "#F8F7F5",
   gray: "#6B6B6B",
   grayLight: "#E5E3DF",
-  overlay: "rgba(26, 58, 107, 0.5)", // Fundo escuro para o modal
+  overlay: "rgba(26, 58, 107, 0.5)",
 };
 
 const STATUS_LABELS: Record<StatusAtendimento, string> = {
@@ -40,10 +58,19 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Estados para controlar o Modal e o formulário
+  // Estados para controlar o Modal e o novo formulário de disponibilidade
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [formData, setFormData] = useState({ clientEmail: '', servicoId: '', time: '', status: 'CONFIRMADO' as StatusAtendimento });
+
+  // Novo formato do formulário alinhado ao NovoAgendamento
+  const [formData, setFormData] = useState<{
+    data: string;
+    horariosDisponiveis: string[];
+  }>({
+    data: hojeISO(),
+    horariosDisponiveis: [],
+  });
+  const [novoHorario, setNovoHorario] = useState("");
 
   const carregarDados = () => {
     setLoading(true);
@@ -82,77 +109,202 @@ export default function AdminDashboard() {
   }, [agendamentosDeHoje]);
 
   const nomeCliente = (emailClient: string) => {
-    return clientesPorEmail.get(emailClient.toLowerCase())?.clientName || emailClient;
+    return (
+      clientesPorEmail.get(emailClient.toLowerCase())?.clientName || emailClient
+    );
   };
 
+  // Adiciona um horário temporariamente na lista do formulário
+  const handleAddHorarioLista = () => {
+    if (!novoHorario || formData.horariosDisponiveis.includes(novoHorario))
+      return;
+    setFormData((prev) => ({
+      ...prev,
+      horariosDisponiveis: [...prev.horariosDisponiveis, novoHorario].sort(),
+    }));
+    setNovoHorario("");
+  };
+
+  // Remove um horário da lista do formulário
+  const handleRemoveHorarioLista = (horarioRemover: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      horariosDisponiveis: prev.horariosDisponiveis.filter(
+        (h) => h !== horarioRemover,
+      ),
+    }));
+  };
+
+  // Envia a nova janela de agendamento para a API
   const handleAddAppointment = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.clientEmail || !formData.servicoId || !formData.time) return;
+    if (!formData.data || formData.horariosDisponiveis.length === 0) {
+      alert(
+        "Por favor, selecione uma data e adicione pelo menos um horário disponível.",
+      );
+      return;
+    }
 
     setSaving(true);
     try {
-      const novoAtendimento = await criarAtendimentoAdmin({
-        emailClient: formData.clientEmail,
-        servicoId: formData.servicoId,
-        data: hojeISO(),
-        hora: formData.time,
-        status: formData.status,
-      });
+      const payload: NovoAgendamento = {
+        data: formData.data,
+        horariosDisponiveis: formData.horariosDisponiveis,
+      };
 
-      setAppointments((prev) => [...prev, novoAtendimento]);
+      await criarAgendamento(payload);
+
+      // Feedback de sucesso e reset
+      alert("Nova janela de agendamentos cadastrada com sucesso!");
       setIsModalOpen(false);
-      setFormData({ clientEmail: '', servicoId: '', time: '', status: 'CONFIRMADO' });
+      setFormData({ data: hojeISO(), horariosDisponiveis: [] });
+
+      // Opcional: Se você quiser recarregar a lista geral após cadastrar
+      carregarDados();
     } catch {
-      alert("Não foi possível salvar o agendamento. Verifique os dados e tente novamente.");
+      alert(
+        "Não foi possível salvar os horários de agendamento. Verifique os dados e tente novamente.",
+      );
     } finally {
       setSaving(false);
     }
   };
 
   return (
-    <div style={{ minHeight: "100vh", background: COLORS.offWhite, padding: "32px", fontFamily: "'Playfair Display', Georgia, serif", color: COLORS.blue, position: "relative" }}>
+    <div
+      style={{
+        minHeight: "100vh",
+        background: COLORS.offWhite,
+        padding: "32px",
+        fontFamily: "'Playfair Display', Georgia, serif",
+        color: COLORS.blue,
+        position: "relative",
+      }}
+    >
       <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
-        
         {/* Header */}
-        <header style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "40px" }}>
+        <header
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginBottom: "40px",
+          }}
+        >
           <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
-            <div style={{ background: COLORS.blue, padding: "12px", color: COLORS.white, borderRadius: "12px" }}>
+            <div
+              style={{
+                background: COLORS.blue,
+                padding: "12px",
+                color: COLORS.white,
+                borderRadius: "12px",
+              }}
+            >
               <Scissors size={28} />
             </div>
             <div>
-              <h1 style={{ fontSize: "32px", fontWeight: 900, margin: 0 }}>CORTE & ESTILO</h1>
-              <p style={{ color: COLORS.red, fontSize: "12px", textTransform: "uppercase", letterSpacing: "0.2em", fontWeight: 700 }}>Painel Administrativo</p>
+              <h1 style={{ fontSize: "32px", fontWeight: 900, margin: 0 }}>
+                CORTE & ESTILO
+              </h1>
+              <p
+                style={{
+                  color: COLORS.red,
+                  fontSize: "12px",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.2em",
+                  fontWeight: 700,
+                }}
+              >
+                Painel Administrativo
+              </p>
             </div>
           </div>
-          <button 
+          <button
             onClick={() => setIsModalOpen(true)}
-            style={{ background: COLORS.red, color: COLORS.white, padding: "12px 24px", borderRadius: "10px", border: "none", fontWeight: 700, cursor: "pointer", transition: "opacity 0.2s" }}
+            style={{
+              background: COLORS.red,
+              color: COLORS.white,
+              padding: "12px 24px",
+              borderRadius: "10px",
+              border: "none",
+              fontWeight: 700,
+              cursor: "pointer",
+              transition: "opacity 0.2s",
+            }}
           >
-            + Novo Agendamento
+            + Abrir Horários
           </button>
         </header>
 
         {error && (
-          <div style={{ background: "#FDEDEC", color: COLORS.red, padding: "16px 20px", borderRadius: "12px", marginBottom: "24px", fontWeight: 600 }}>
+          <div
+            style={{
+              background: "#FDEDEC",
+              color: COLORS.red,
+              padding: "16px 20px",
+              borderRadius: "12px",
+              marginBottom: "24px",
+              fontWeight: 600,
+            }}
+          >
             {error}
           </div>
         )}
 
-        {/* Métricas dinâmicas baseadas nos dados reais */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "20px", marginBottom: "40px" }}>
-          <MetricCard title="Faturamento Previsto" value={`R$ ${faturamentoPrevisto.toFixed(2).replace('.', ',')}`} icon={<DollarSign />} />
-          <MetricCard title="Agendamentos Hoje" value={agendamentosDeHoje.length.toString()} icon={<Calendar />} />
-          <MetricCard title="Clientes" value={clientes.length.toString()} icon={<Users />} />
-          <MetricCard title="Disponibilidade" value={Math.max(0, 10 - agendamentosDeHoje.length).toString()} icon={<Clock />} />
+        {/* Métricas */}
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(4, 1fr)",
+            gap: "20px",
+            marginBottom: "40px",
+          }}
+        >
+          <MetricCard
+            title="Faturamento Previsto"
+            value={`R$ ${faturamentoPrevisto.toFixed(2).replace(".", ",")}`}
+            icon={<DollarSign />}
+          />
+          <MetricCard
+            title="Agendamentos Hoje"
+            value={agendamentosDeHoje.length.toString()}
+            icon={<Calendar />}
+          />
+          <MetricCard
+            title="Clientes"
+            value={clientes.length.toString()}
+            icon={<Users />}
+          />
+          <MetricCard
+            title="Disponibilidade"
+            value={Math.max(0, 10 - agendamentosDeHoje.length).toString()}
+            icon={<Clock />}
+          />
         </div>
 
         {/* Tabela */}
-        <div style={{ background: COLORS.white, borderRadius: "20px", padding: "32px", border: `1px solid ${COLORS.grayLight}`, boxShadow: "0 4px 20px rgba(0,0,0,0.05)" }}>
-          <h3 style={{ marginBottom: "24px", fontSize: "22px" }}>Ordem do Dia</h3>
+        <div
+          style={{
+            background: COLORS.white,
+            borderRadius: "20px",
+            padding: "32px",
+            border: `1px solid ${COLORS.grayLight}`,
+            boxShadow: "0 4px 20px rgba(0,0,0,0.05)",
+          }}
+        >
+          <h3 style={{ marginBottom: "24px", fontSize: "22px" }}>
+            Ordem do Dia
+          </h3>
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
-              <tr style={{ color: COLORS.gray, textAlign: "left", fontSize: "14px" }}>
+              <tr
+                style={{
+                  color: COLORS.gray,
+                  textAlign: "left",
+                  fontSize: "14px",
+                }}
+              >
                 <th style={{ paddingBottom: "16px" }}>Cavalheiro</th>
                 <th style={{ paddingBottom: "16px" }}>Serviço</th>
                 <th style={{ paddingBottom: "16px" }}>Horário</th>
@@ -162,11 +314,29 @@ export default function AdminDashboard() {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={4} style={{ padding: "20px 0", textAlign: "center", color: COLORS.gray }}>Carregando agendamentos...</td>
+                  <td
+                    colSpan={4}
+                    style={{
+                      padding: "20px 0",
+                      textAlign: "center",
+                      color: COLORS.gray,
+                    }}
+                  >
+                    Carregando agendamentos...
+                  </td>
                 </tr>
               ) : agendamentosDeHoje.length === 0 ? (
                 <tr>
-                  <td colSpan={4} style={{ padding: "20px 0", textAlign: "center", color: COLORS.gray }}>Nenhum agendamento para hoje.</td>
+                  <td
+                    colSpan={4}
+                    style={{
+                      padding: "20px 0",
+                      textAlign: "center",
+                      color: COLORS.gray,
+                    }}
+                  >
+                    Nenhum agendamento para hoje.
+                  </td>
                 </tr>
               ) : (
                 agendamentosDeHoje.map((appt) => (
@@ -184,78 +354,224 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      {/* Modal de Novo Agendamento */}
+      {/* Modal de Nova Disponibilidade de Agendamento */}
       {isModalOpen && (
-        <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: COLORS.overlay, display: "flex", alignItems: "center", justifyContent: "center", zIndex: 50, padding: "20px" }}>
-          <div style={{ background: COLORS.white, padding: "32px", borderRadius: "20px", width: "100%", maxWidth: "400px", position: "relative", boxShadow: "0 20px 40px rgba(0,0,0,0.2)" }}>
-            
-            <button onClick={() => setIsModalOpen(false)} style={{ position: "absolute", top: "24px", right: "24px", background: "none", border: "none", cursor: "pointer", color: COLORS.gray }}>
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: COLORS.overlay,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 50,
+            padding: "20px",
+          }}
+        >
+          <div
+            style={{
+              background: COLORS.white,
+              padding: "32px",
+              borderRadius: "20px",
+              width: "100%",
+              maxWidth: "420px",
+              position: "relative",
+              boxShadow: "0 20px 40px rgba(0,0,0,0.2)",
+            }}
+          >
+            <button
+              onClick={() => setIsModalOpen(false)}
+              style={{
+                position: "absolute",
+                top: "24px",
+                right: "24px",
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+                color: COLORS.gray,
+              }}
+            >
               <X size={24} />
             </button>
 
-            <h3 style={{ fontSize: "24px", marginBottom: "24px", color: COLORS.blue, marginTop: 0 }}>Novo Agendamento</h3>
-            
-            <form onSubmit={handleAddAppointment} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-              
+            <h3
+              style={{
+                fontSize: "24px",
+                marginBottom: "24px",
+                color: COLORS.blue,
+                marginTop: 0,
+              }}
+            >
+              Liberar Agenda
+            </h3>
+
+            <form
+              onSubmit={handleAddAppointment}
+              style={{ display: "flex", flexDirection: "column", gap: "20px" }}
+            >
               <div>
-                <label style={{ display: "block", fontSize: "12px", fontWeight: 700, color: COLORS.gray, marginBottom: "8px", textTransform: "uppercase" }}>Cliente</label>
-                <select
-                  required
-                  value={formData.clientEmail}
-                  onChange={(e) => setFormData({...formData, clientEmail: e.target.value})}
-                  style={{ width: "100%", padding: "12px", borderRadius: "8px", border: `1px solid ${COLORS.grayLight}`, boxSizing: "border-box", fontFamily: "inherit", backgroundColor: COLORS.white }}
+                <label
+                  style={{
+                    display: "block",
+                    fontSize: "12px",
+                    fontWeight: 700,
+                    color: COLORS.gray,
+                    marginBottom: "8px",
+                    textTransform: "uppercase",
+                  }}
                 >
-                  <option value="" disabled>Selecione um cliente</option>
-                  {clientes.map((c) => (
-                    <option key={c.id} value={c.clientEmail}>{c.clientName}</option>
-                  ))}
-                </select>
+                  Data da Agenda
+                </label>
+                <input
+                  type="date"
+                  required
+                  value={formData.data}
+                  onChange={(e) =>
+                    setFormData({ ...formData, data: e.target.value })
+                  }
+                  style={{
+                    width: "100%",
+                    padding: "12px",
+                    borderRadius: "8px",
+                    border: `1px solid ${COLORS.grayLight}`,
+                    boxSizing: "border-box",
+                    fontFamily: "inherit",
+                  }}
+                />
               </div>
 
               <div>
-                <label style={{ display: "block", fontSize: "12px", fontWeight: 700, color: COLORS.gray, marginBottom: "8px", textTransform: "uppercase" }}>Serviço</label>
-                <select 
-                  required
-                  value={formData.servicoId}
-                  onChange={(e) => setFormData({...formData, servicoId: e.target.value})}
-                  style={{ width: "100%", padding: "12px", borderRadius: "8px", border: `1px solid ${COLORS.grayLight}`, boxSizing: "border-box", fontFamily: "inherit", backgroundColor: COLORS.white }}
+                <label
+                  style={{
+                    display: "block",
+                    fontSize: "12px",
+                    fontWeight: 700,
+                    color: COLORS.gray,
+                    marginBottom: "8px",
+                    textTransform: "uppercase",
+                  }}
                 >
-                  <option value="" disabled>Selecione um serviço</option>
-                  {servicos.map((s) => (
-                    <option key={s.id} value={s.id}>{s.serviceName}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div style={{ display: "flex", gap: "16px" }}>
-                <div style={{ flex: 1 }}>
-                  <label style={{ display: "block", fontSize: "12px", fontWeight: 700, color: COLORS.gray, marginBottom: "8px", textTransform: "uppercase" }}>Horário</label>
-                  <input 
-                    type="time" 
-                    required
-                    value={formData.time}
-                    onChange={(e) => setFormData({...formData, time: e.target.value})}
-                    style={{ width: "100%", padding: "12px", borderRadius: "8px", border: `1px solid ${COLORS.grayLight}`, boxSizing: "border-box", fontFamily: "inherit" }}
+                  Adicionar Horário
+                </label>
+                <div style={{ display: "flex", gap: "8px" }}>
+                  <input
+                    type="time"
+                    value={novoHorario}
+                    onChange={(e) => setNovoHorario(e.target.value)}
+                    style={{
+                      flex: 1,
+                      padding: "12px",
+                      borderRadius: "8px",
+                      border: `1px solid ${COLORS.grayLight}`,
+                      fontFamily: "inherit",
+                    }}
                   />
-                </div>
-                <div style={{ flex: 1 }}>
-                  <label style={{ display: "block", fontSize: "12px", fontWeight: 700, color: COLORS.gray, marginBottom: "8px", textTransform: "uppercase" }}>Status</label>
-                  <select 
-                    value={formData.status}
-                    onChange={(e) => setFormData({...formData, status: e.target.value as StatusAtendimento})}
-                    style={{ width: "100%", padding: "12px", borderRadius: "8px", border: `1px solid ${COLORS.grayLight}`, boxSizing: "border-box", fontFamily: "inherit", backgroundColor: COLORS.white }}
+                  <button
+                    type="button"
+                    onClick={handleAddHorarioLista}
+                    style={{
+                      background: COLORS.blue,
+                      color: COLORS.white,
+                      border: "none",
+                      borderRadius: "8px",
+                      padding: "0 16px",
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
                   >
-                    <option value="CONFIRMADO">Confirmado</option>
-                    <option value="PENDENTE">Pendente</option>
-                  </select>
+                    <Plus size={20} />
+                  </button>
                 </div>
               </div>
 
-              <button type="submit" disabled={saving} style={{ background: COLORS.blue, color: COLORS.white, padding: "16px", borderRadius: "10px", border: "none", fontWeight: 700, cursor: saving ? "default" : "pointer", marginTop: "8px", fontSize: "16px", opacity: saving ? 0.7 : 1 }}>
-                {saving ? "Salvando..." : "Salvar Agendamento"}
+              {/* Lista visual dos horários adicionados */}
+              <div>
+                <label
+                  style={{
+                    display: "block",
+                    fontSize: "12px",
+                    fontWeight: 700,
+                    color: COLORS.gray,
+                    marginBottom: "8px",
+                    textTransform: "uppercase",
+                  }}
+                >
+                  Horários Selecionados
+                </label>
+                {formData.horariosDisponiveis.length === 0 ? (
+                  <p
+                    style={{
+                      color: COLORS.gray,
+                      fontSize: "14px",
+                      margin: "4px 0",
+                      fontStyle: "italic",
+                    }}
+                  >
+                    Nenhum horário adicionado ainda.
+                  </p>
+                ) : (
+                  <div
+                    style={{
+                      display: "flex",
+                      flexWrap: "wrap",
+                      gap: "8px",
+                      maxHeight: "120px",
+                      overflowY: "auto",
+                      padding: "4px",
+                    }}
+                  >
+                    {formData.horariosDisponiveis.map((hr) => (
+                      <span
+                        key={hr}
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: "6px",
+                          background: COLORS.offWhite,
+                          border: `1px solid ${COLORS.grayLight}`,
+                          padding: "6px 12px",
+                          borderRadius: "20px",
+                          fontSize: "14px",
+                          fontWeight: 700,
+                          color: COLORS.blue,
+                        }}
+                      >
+                        {hr}
+                        <Trash2
+                          size={14}
+                          style={{ color: COLORS.red, cursor: "pointer" }}
+                          onClick={() => handleRemoveHorarioLista(hr)}
+                        />
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <button
+                type="submit"
+                disabled={saving}
+                style={{
+                  background: COLORS.red,
+                  color: COLORS.white,
+                  padding: "16px",
+                  borderRadius: "10px",
+                  border: "none",
+                  fontWeight: 700,
+                  cursor: saving ? "default" : "pointer",
+                  marginTop: "8px",
+                  fontSize: "16px",
+                  opacity: saving ? 0.7 : 1,
+                }}
+              >
+                {saving ? "Salvando..." : "Salvar Disponibilidade"}
               </button>
             </form>
-
           </div>
         </div>
       )}
@@ -265,10 +581,28 @@ export default function AdminDashboard() {
 
 function MetricCard({ title, value, icon }: any) {
   return (
-    <div style={{ background: COLORS.white, padding: "24px", borderRadius: "16px", border: `1px solid ${COLORS.grayLight}` }}>
+    <div
+      style={{
+        background: COLORS.white,
+        padding: "24px",
+        borderRadius: "16px",
+        border: `1px solid ${COLORS.grayLight}`,
+      }}
+    >
       <div style={{ color: COLORS.blue, marginBottom: "12px" }}>{icon}</div>
-      <p style={{ color: COLORS.gray, fontSize: "12px", textTransform: "uppercase", margin: 0 }}>{title}</p>
-      <p style={{ fontSize: "22px", fontWeight: 700, margin: "4px 0 0" }}>{value}</p>
+      <p
+        style={{
+          color: COLORS.gray,
+          fontSize: "12px",
+          textTransform: "uppercase",
+          margin: 0,
+        }}
+      >
+        {title}
+      </p>
+      <p style={{ fontSize: "22px", fontWeight: 700, margin: "4px 0 0" }}>
+        {value}
+      </p>
     </div>
   );
 }
@@ -280,7 +614,16 @@ function Row({ name, service, time, status }: any) {
       <td style={{ padding: "20px 0", color: COLORS.gray }}>{service}</td>
       <td style={{ padding: "20px 0", fontWeight: 700 }}>{time}</td>
       <td style={{ padding: "20px 0" }}>
-        <span style={{ fontSize: "11px", padding: "6px 12px", borderRadius: "20px", background: status === 'Confirmado' ? COLORS.red : '#F5A623', color: COLORS.white, fontWeight: 700 }}>
+        <span
+          style={{
+            fontSize: "11px",
+            padding: "6px 12px",
+            borderRadius: "20px",
+            background: status === "Confirmado" ? COLORS.red : "#F5A623",
+            color: COLORS.white,
+            fontWeight: 700,
+          }}
+        >
           {status}
         </span>
       </td>
