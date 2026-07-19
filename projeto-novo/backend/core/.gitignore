@@ -1,0 +1,7 @@
+/shelf/
+/.idea/workspace.xml
+.env
+.env.**
+/target
+projeto-real/
+.idea/
