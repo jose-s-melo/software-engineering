@@ -56,9 +56,16 @@ export default function Navbar() {
             )}
 
             {/* Mostra SÓ para Cliente */}
-            {role === "CLIENT" && (
+            {role === "CLIENTE" && (
               <Link href="/agendamento" className="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium transition-colors">
                 Meus Agendamentos
+              </Link>
+            )}
+
+            {/* Mostra para qualquer usuário logado */}
+            {role && (
+              <Link href="/perfil" className="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                Alterar Senha
               </Link>
             )}
           </div>
@@ -111,9 +118,16 @@ export default function Navbar() {
           )}
 
           {/* Mostra SÓ para Cliente */}
-          {role === "CLIENT" && (
+          {role === "CLIENTE" && (
             <Link href="/agendamento" className="block text-gray-700 hover:text-blue-600 hover:bg-gray-50 px-3 py-2 rounded-md text-base font-medium" onClick={() => setIsOpen(false)}>
               Meus Agendamentos
+            </Link>
+          )}
+
+          {/* Mostra para qualquer usuário logado */}
+          {role && (
+            <Link href="/perfil" className="block text-gray-700 hover:text-blue-600 hover:bg-gray-50 px-3 py-2 rounded-md text-base font-medium" onClick={() => setIsOpen(false)}>
+              Alterar Senha
             </Link>
           )}
 

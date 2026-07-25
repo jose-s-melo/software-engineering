@@ -4,6 +4,9 @@ import { useState, useEffect } from "react";
 import localFont from "next/font/local";
 import {
   criarAtendimento,
+  getAtendimentosPorCliente,
+  cancelarAtendimento,
+  Atendimento,
   NovoAtendimentoCliente,
 } from "@/app/api/atendimentos/atendimentoService";
 import { Servico } from "@/types/servico";
@@ -72,6 +75,48 @@ export default function AgendamentoPage() {
   const [horariosDisponiveis, setHorariosDisponiveis] = useState<string[]>([]);
   const [carregandoServicos, setCarregandoServicos] = useState(true);
   const [carregandoHorarios, setCarregandoHorarios] = useState(false);
+
+  const [meusAgendamentos, setMeusAgendamentos] = useState<Atendimento[]>([]);
+  const [carregandoMeusAgendamentos, setCarregandoMeusAgendamentos] = useState(true);
+  const [cancelandoId, setCancelandoId] = useState<string | null>(null);
+
+  const carregarMeusAgendamentos = async () => {
+    const email = localStorage.getItem("email");
+    if (!email) {
+      setCarregandoMeusAgendamentos(false);
+      return;
+    }
+    try {
+      setCarregandoMeusAgendamentos(true);
+      const data = await getAtendimentosPorCliente(email);
+      setMeusAgendamentos(data);
+    } catch (err) {
+      console.error("Erro ao buscar meus agendamentos:", err);
+    } finally {
+      setCarregandoMeusAgendamentos(false);
+    }
+  };
+
+  useEffect(() => {
+    carregarMeusAgendamentos();
+  }, []);
+
+  const handleCancelarMeuAgendamento = async (atendimento: Atendimento) => {
+    if (!window.confirm(`Cancelar seu agendamento de ${atendimento.nomeServico}?`)) return;
+
+    setCancelandoId(atendimento.id);
+    try {
+      const atualizado = await cancelarAtendimento(atendimento.id);
+      setMeusAgendamentos((prev) =>
+        prev.map((a) => (a.id === atualizado.id ? atualizado : a))
+      );
+    } catch (err) {
+      console.error("Erro ao cancelar agendamento:", err);
+      alert("Não foi possível cancelar o agendamento.");
+    } finally {
+      setCancelandoId(null);
+    }
+  };
 
   useEffect(() => {
     const gerarProximosDias = () => {
@@ -181,6 +226,7 @@ export default function AgendamentoPage() {
       alert("Agendamento realizado com sucesso!");
       setServicoSelecionado(null);
       setHorarioSelecionado("");
+      carregarMeusAgendamentos();
     } catch (error) {
       console.error("Erro ao agendar:", error);
       alert("Erro ao confirmar agendamento. O servidor retornou um erro.");
@@ -287,6 +333,81 @@ export default function AgendamentoPage() {
     </div>
   );
 
+  const STATUS_LABELS: Record<string, string> = {
+    CONFIRMADO: "Confirmado",
+    PENDENTE: "Pendente",
+    CANCELADO: "Cancelado",
+    AGENDADO: "Agendado",
+  };
+
+  const renderMeusAgendamentos = () => (
+    <div className="mt-12">
+      <h2
+        style={{ color: COLORS.text }}
+        className={`${fonteGotham.className} text-base tracking-[0.1px] mb-2`}
+      >
+        MEUS AGENDAMENTOS
+      </h2>
+      <div style={{ borderColor: COLORS.grayLight }} className="border-b mb-6 w-full" />
+
+      {carregandoMeusAgendamentos ? (
+        <p className="text-gray-500 italic text-center py-6">Carregando seus agendamentos...</p>
+      ) : meusAgendamentos.length === 0 ? (
+        <p className="text-gray-500 italic text-center py-6">
+          Você ainda não tem nenhum agendamento.
+        </p>
+      ) : (
+        <div className="flex flex-col gap-4">
+          {meusAgendamentos.map((atendimento) => (
+            <div
+              key={atendimento.id}
+              style={{ borderColor: COLORS.grayLight }}
+              className="flex items-center justify-between gap-4 p-5 border bg-white shadow-sm flex-wrap"
+            >
+              <div>
+                <p style={{ color: COLORS.text }} className="font-bold">
+                  {atendimento.nomeServico}
+                </p>
+                <p style={{ color: COLORS.gray }} className="text-sm">
+                  {atendimento.data
+                    ? `${atendimento.data.split("-").reverse().join("/")} às ${atendimento.hora}`
+                    : atendimento.hora}
+                </p>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <span
+                  style={{
+                    color:
+                      atendimento.status === "CONFIRMADO"
+                        ? "#1E7E34"
+                        : atendimento.status === "CANCELADO"
+                        ? COLORS.red
+                        : "#8A6D00",
+                  }}
+                  className="text-xs font-bold uppercase tracking-wider"
+                >
+                  {STATUS_LABELS[atendimento.status] || atendimento.status}
+                </span>
+
+                {atendimento.status !== "CANCELADO" && (
+                  <button
+                    onClick={() => handleCancelarMeuAgendamento(atendimento)}
+                    disabled={cancelandoId === atendimento.id}
+                    style={{ borderColor: COLORS.red, color: COLORS.red }}
+                    className="px-3 py-2 text-xs font-bold uppercase border hover:bg-red-50 transition-colors disabled:opacity-50"
+                  >
+                    {cancelandoId === atendimento.id ? "Cancelando..." : "Cancelar"}
+                  </button>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+
   const renderModalHorarios = () => {
     if (servicoSelecionado === null) return null;
 
@@ -373,6 +494,7 @@ export default function AgendamentoPage() {
 
         {renderSelecaoDatas()}
         {renderPainelServicos()}
+        {renderMeusAgendamentos()}
       </div>
 
       {renderModalHorarios()}

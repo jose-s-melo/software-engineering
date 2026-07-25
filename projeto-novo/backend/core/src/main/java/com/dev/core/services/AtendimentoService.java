@@ -5,6 +5,7 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.List;
 
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,9 +16,13 @@ import com.dev.core.models.Agendamento;
 import com.dev.core.models.Atendimento;
 import com.dev.core.models.Servico;
 import com.dev.core.models.StatusAtendimento;
+import com.dev.core.models.user.User;
+import com.dev.core.models.user.UserRole;
 import com.dev.core.repositories.AgendamentoRepository;
 import com.dev.core.repositories.AtendimentoRepository;
 import com.dev.core.repositories.ServicoRepository;
+
+import java.util.UUID;
 
 import lombok.RequiredArgsConstructor;
 
@@ -93,6 +98,38 @@ public class AtendimentoService {
                 .hora(dto.hora())
                 .status(dto.status() != null ? dto.status() : StatusAtendimento.CONFIRMADO)
                 .build();
+
+        return atendimentoRepository.save(atendimento);
+    }
+
+    /**
+     * Cancela um atendimento. O próprio cliente pode cancelar os seus; admin/barbeiro podem cancelar qualquer um.
+     * O horário liberado volta para a grade de disponibilidade do dia (espelha a remoção feita em agendarServico).
+     */
+    @Transactional
+    public Atendimento cancelar(UUID id, User requester) {
+        Atendimento atendimento = atendimentoRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Atendimento não encontrado."));
+
+        boolean isStaff = requester.getRole() == UserRole.ADMIN || requester.getRole() == UserRole.BARBEIRO;
+        if (!isStaff && !atendimento.getEmailClient().equalsIgnoreCase(requester.getEmail())) {
+            throw new AccessDeniedException("Você não pode cancelar o agendamento de outro cliente.");
+        }
+
+        if (atendimento.getStatus() == StatusAtendimento.CANCELADO) {
+            throw new RuntimeException("Atendimento já está cancelado.");
+        }
+
+        atendimento.setStatus(StatusAtendimento.CANCELADO);
+
+        if (atendimento.getData() != null) {
+            agendamentoRepository.findFirstByData(atendimento.getData()).ifPresent(agenda -> {
+                if (!agenda.getHorariosDisponiveis().contains(atendimento.getHora())) {
+                    agenda.getHorariosDisponiveis().add(atendimento.getHora());
+                    agendamentoRepository.save(agenda);
+                }
+            });
+        }
 
         return atendimentoRepository.save(atendimento);
     }

@@ -12,11 +12,13 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Tag(name = "Atendimentos", description = "Endpoints para os clientes realizarem reservas de serviços")
@@ -69,6 +71,21 @@ public class AtendimentoController {
                 .map(this::converterParaDTO)
                 .collect(Collectors.toList());
         return ResponseEntity.ok(response);
+    }
+
+    @Operation(summary = "Cancelar um atendimento",
+            description = "Cancela um atendimento existente. O próprio cliente pode cancelar seus atendimentos; admin/barbeiro podem cancelar qualquer um. O horário liberado volta a ficar disponível na agenda do dia.")
+    @ApiResponse(responseCode = "200", description = "Atendimento cancelado com sucesso")
+    @PatchMapping("/{id}/cancelar")
+    public ResponseEntity<AtendimentoResponseDTO> cancelar(@PathVariable UUID id, @AuthenticationPrincipal User user) {
+        try {
+            Atendimento atendimento = atendimentoService.cancelar(id, user);
+            return ResponseEntity.ok(converterParaDTO(atendimento));
+        } catch (AccessDeniedException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().build();
+        }
     }
 
     private AtendimentoResponseDTO converterParaDTO(Atendimento atendimento) {

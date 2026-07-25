@@ -3,7 +3,6 @@ package com.dev.core.controllers;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import com.dev.core.dtos.email.SendEmailDTO;
@@ -27,7 +26,6 @@ public class NotificationController {
     private EmailService service;
 
     @PostMapping("/send")
-    @PreAuthorize("hasRole('ADMIN')")
     @Operation(
             summary = "Enviar notificação por e-mail",
             description = "Envia uma notificação por e-mail para um usuário utilizando o endereço de e-mail informado."

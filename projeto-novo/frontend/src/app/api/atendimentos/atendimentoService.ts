@@ -48,3 +48,8 @@ export async function criarAtendimento(dados: NovoAtendimentoCliente) {
   const response = await api.post("atendimentos", dados);
   return response.data;
 }
+
+export async function cancelarAtendimento(id: string): Promise<Atendimento> {
+  const response = await api.patch<Atendimento>(`atendimentos/${id}/cancelar`);
+  return response.data;
+}

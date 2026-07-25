@@ -4,7 +4,8 @@ import { useEffect, useState } from "react";
 import Modal from "@/components/ui/Modal";
 import TableContainer from "@/components/ui/TableContainer";
 import Button from "@/components/ui/Button";
-import { getAtendimentosPorCliente, Atendimento, StatusAtendimento } from "@/app/api/atendimentos/atendimentoService";
+import SendEmailModal from "@/components/modals/SendEmailModal";
+import { getAtendimentosPorCliente, cancelarAtendimento, Atendimento, StatusAtendimento } from "@/app/api/atendimentos/atendimentoService";
 
 type ClientAppointmentsModalProps = {
     clientId: string;
@@ -38,6 +39,27 @@ export default function ClientAppointmentsModal({
     const [clientAppointments, setClientAppointments] = useState<Atendimento[]>([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [emailModalOpen, setEmailModalOpen] = useState(false);
+    const [cancelingId, setCancelingId] = useState<string | null>(null);
+
+    const handleCancel = async (appointment: Atendimento) => {
+        if (!window.confirm(`Cancelar o agendamento de ${appointment.nomeServico} em ${formatDate(appointment.data)} às ${appointment.hora}?`)) {
+            return;
+        }
+
+        setCancelingId(appointment.id);
+        try {
+            const atualizado = await cancelarAtendimento(appointment.id);
+            setClientAppointments((prev) =>
+                prev.map((a) => (a.id === atualizado.id ? atualizado : a))
+            );
+        } catch (err) {
+            console.error(err);
+            alert("Não foi possível cancelar o agendamento.");
+        } finally {
+            setCancelingId(null);
+        }
+    };
 
     useEffect(() => {
         if (!isOpen || !clientEmail) return;
@@ -96,25 +118,29 @@ export default function ClientAppointmentsModal({
                     <th className="p-5 text-left text-sm tracking-widest font-black">
                     Status
                     </th>
+
+                    <th className="p-5 text-left text-sm tracking-widest font-black">
+                    Ações
+                    </th>
                 </tr>
                 </thead>
 
                 <tbody>
                 {loading ? (
                     <tr>
-                        <td colSpan={4} className="p-5 text-center text-[#6B6B6B]">
+                        <td colSpan={5} className="p-5 text-center text-[#6B6B6B]">
                             Carregando agendamentos...
                         </td>
                     </tr>
                 ) : error ? (
                     <tr>
-                        <td colSpan={4} className="p-5 text-center text-red-700">
+                        <td colSpan={5} className="p-5 text-center text-red-700">
                             {error}
                         </td>
                     </tr>
                 ) : clientAppointments.length === 0 ? (
                     <tr>
-                        <td colSpan={4} className="p-5 text-center text-[#6B6B6B]">
+                        <td colSpan={5} className="p-5 text-center text-[#6B6B6B]">
                             Nenhum agendamento encontrado para este cliente.
                         </td>
                     </tr>
@@ -156,6 +182,18 @@ export default function ClientAppointmentsModal({
                             {STATUS_LABELS[appointment.status]}
                             </span>
                         </td>
+
+                        <td className="p-5">
+                            {appointment.status !== "CANCELADO" && (
+                                <button
+                                    onClick={() => handleCancel(appointment)}
+                                    disabled={cancelingId === appointment.id}
+                                    className="px-3 py-2 text-xs font-black uppercase border-2 border-[#8B0000] text-[#8B0000] hover:bg-[#8B0000] hover:text-white transition-colors disabled:opacity-50"
+                                >
+                                    {cancelingId === appointment.id ? "Cancelando..." : "Cancelar"}
+                                </button>
+                            )}
+                        </td>
                         </tr>
                     ))
                 )}
@@ -163,12 +201,22 @@ export default function ClientAppointmentsModal({
             </table>
             </TableContainer>
 
-            <div className="flex justify-end mt-6">
+            <div className="flex justify-end gap-3 mt-6">
+            <Button variant="utility" onClick={() => setEmailModalOpen(true)}>
+                Enviar Email
+            </Button>
             <Button variant="outline" onClick={onClose}>
                 Fechar
             </Button>
             </div>
         </div>
+
+        <SendEmailModal
+            clientEmail={clientEmail}
+            clientName={clientName}
+            isOpen={emailModalOpen}
+            onClose={() => setEmailModalOpen(false)}
+        />
         </Modal>
     );
     }

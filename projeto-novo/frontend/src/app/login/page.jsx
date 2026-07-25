@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { login } from "../api/auth/authService";
+import ForgotPasswordModal from "@/components/modals/ForgotPasswordModal";
 
 const COLORS = {
   red: "#C8102E",
@@ -120,6 +121,7 @@ function LoginForm() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [forgotOpen, setForgotOpen] = useState(false);
 
   const handle = async () => {
     if (!email || !password) { setError("Preencha todos os campos."); return; }
@@ -134,6 +136,7 @@ function LoginForm() {
       if (response.message === "Success") {
         localStorage.setItem("token", response.token);
         localStorage.setItem("role", response.user.role);
+        localStorage.setItem("email", response.user.email);
 
         if (response.user.role === "ADMIN") {
           router.push("/admin/dashboard");
@@ -167,10 +170,15 @@ function LoginForm() {
       <Input label="Senha" type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" icon="🔒" />
 
       <div style={{ textAlign: "right", marginTop: -10, marginBottom: 20 }}>
-        <span style={{ fontSize: 13, color: COLORS.red, cursor: "pointer", fontWeight: 500 }}>
+        <span
+          onClick={() => setForgotOpen(true)}
+          style={{ fontSize: 13, color: COLORS.red, cursor: "pointer", fontWeight: 500 }}
+        >
           Esqueci minha senha
         </span>
       </div>
+
+      <ForgotPasswordModal isOpen={forgotOpen} onClose={() => setForgotOpen(false)} />
 
       {error && (
         <div style={{ background: COLORS.redLight, border: `1px solid ${COLORS.red}`, borderRadius: 8, padding: "10px 14px", color: COLORS.redDark, fontSize: 13, marginBottom: 16 }}>
